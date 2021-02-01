@@ -53,16 +53,67 @@ defmodule Chexx do
     end
   end
 
-  @pawn_notation ~r/^[a-h][1-8]$/
-  @pawn_capture_notation ~r/^[a-h]x[a-h][1-8]$/
+  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
 
-  def move(board, by, movement) do
-    {piece_type_moved, destination, possible_starting_positions, is_en_passant_capture?} =
+  defp parse_notation(notation) do
+    unless String.match?(notation, @notation_regex) do
+      raise "Notation #{inspect notation} not recognized"
+    end
+
+    captures = Regex.named_captures(@notation_regex, notation)
+
+    moved_piece =
+      case Map.get(captures, "moved_piece") do
+        "K" -> :king
+        "Q" -> :queen
+        "R" -> :rook
+        "B" -> :bishop
+        "N" -> :knight
+        "p" -> :pawn
+        "" -> :pawn
+      end
+
+    dest_file = captures["dest_file"] |> String.to_existing_atom()
+    {dest_rank, ""} = captures["dest_rank"] |> Integer.parse()
+
+    source_file_notation = Map.get(captures, "source_file")
+    source_file =
+      if source_file_notation == "" do
+        nil
+      else
+        String.to_existing_atom(source_file_notation)
+      end
+
+    source_rank_notation = Map.get(captures, "source_rank")
+    source_rank =
+      if source_rank_notation == "" do
+        nil
+      else
+        String.to_existing_atom(source_rank_notation)
+      end
+
+    %{
+      moved_piece_type: moved_piece,
+      destination: {dest_file, dest_rank},
+      capture?: Map.get(captures, "capture_flag") == "x",
+      source_file: source_file,
+      source_rank: source_rank
+    }
+  end
+
+  def move(board, by, notation) do
+    %{
+      moved_piece_type: piece_type_moved,
+      destination: destination,
+      capture?: is_capture?,
+      source_file: source_file,
+      source_rank: _source_rank
+      } = parse_notation(notation)
+
+    {possible_starting_positions, is_en_passant_capture?} =
       cond do
-        String.match?(movement, @pawn_notation) ->
-          file = String.at(movement, 0) |> String.to_existing_atom()
-          {rank, ""} = String.at(movement, 1) |> Integer.parse()
-          destination = {file, rank}
+        piece_type_moved == :pawn and not is_capture? ->
+          {_file, rank} = destination
 
           can_move_one? = is_nil(piece_at(board, destination))
 
@@ -96,17 +147,14 @@ defmodule Chexx do
               true -> []
             end
 
-            {:pawn, destination, allowed_moves, false}
-        String.match?(movement, @pawn_capture_notation) ->
-          file = String.at(movement, 2) |> String.to_existing_atom()
-          {destination_rank, ""} = String.at(movement, 3) |> Integer.parse()
-          destination = {file, destination_rank}
+            {allowed_moves, false}
+        piece_type_moved == :pawn and is_capture? ->
+          {_file, destination_rank} = destination
 
-          starting_file = String.at(movement, 0) |> String.to_existing_atom()
           {_source_file, source_rank} = source =
             case by do
-              :white -> down({starting_file, destination_rank}, 1)
-              :black -> up({starting_file, destination_rank}, 1)
+              :white -> down({source_file, destination_rank}, 1)
+              :black -> up({source_file, destination_rank}, 1)
             end
 
           {en_passant_captured_file, en_passant_captured_rank} = en_passant_captured_square =
@@ -151,14 +199,11 @@ defmodule Chexx do
           regular_capture? =
             not is_nil(piece_at(board, destination))
 
-
           if regular_capture? or en_passant_capture? do
-            {:pawn, destination, [source], en_passant_capture?}
+            {[source], en_passant_capture?}
           else
-            {:pawn, destination, [], false}
+            {[], false}
           end
-        true ->
-          raise "Move #{inspect movement} not recognized"
       end
 
     possible_source_spaces =
@@ -172,12 +217,12 @@ defmodule Chexx do
       end)
 
     if Enum.empty?(possible_source_spaces) do
-      raise "No piece found for #{by} to perform move #{inspect movement}"
+      raise "No piece found for #{by} to perform move #{inspect notation}"
     end
 
     possible_source_count = Enum.count(possible_source_spaces)
     if possible_source_count > 1 do
-      raise "Ambiguous move: #{inspect movement} can mean #{possible_source_count} possible moves. Possible source spaces: #{inspect possible_source_spaces}"
+      raise "Ambiguous move: #{inspect notation} can mean #{possible_source_count} possible moves. Possible source spaces: #{inspect possible_source_spaces}"
     end
 
     source_space = Enum.at(possible_source_spaces, 0)
@@ -208,7 +253,7 @@ defmodule Chexx do
     |> delete_piece(source_space)
     |> delete_piece(captured_square)
     |> put_piece(moving_piece.type, moving_piece.color, destination)
-    |> put_move(movement)
+    |> put_move(notation)
   end
 
   def up({file, rank}, squares \\ 1) do
