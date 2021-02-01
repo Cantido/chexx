@@ -110,7 +110,7 @@ defmodule Chexx do
 
     {possible_starting_positions, is_en_passant_capture?} =
       case piece_type_moved do
-        :pawn -> possible_pawn_moves(board, by, move)
+        :pawn -> possible_pawn_sources(board, by, move)
       end
 
     possible_source_spaces =
@@ -211,7 +211,7 @@ defmodule Chexx do
   defp number_to_file(7), do: :g
   defp number_to_file(8), do: :h
 
-  defp possible_pawn_moves(board, by, move) do
+  defp possible_pawn_sources(board, by, move) do
     %{
       destination: destination,
       capture?: is_capture?,
