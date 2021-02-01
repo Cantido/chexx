@@ -127,5 +127,37 @@ defmodule ChexxTest do
       assert piece.type == :pawn
       assert piece.color == :black
     end
+
+    test "white en passant capture" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :black, {:e, 7})
+        |> Chexx.put_piece(:pawn, :white, {:f, 5})
+        |> Chexx.move(:black, "e5")
+        |> Chexx.move(:white, "fxe6")
+
+
+      white_pawn = Chexx.piece_at(board, {:e, 6})
+      assert white_pawn.type == :pawn
+      assert white_pawn.color == :white
+
+      assert is_nil(Chexx.piece_at(board, {:e, 5})), "Pawn was not captured in an en passant capture."
+    end
+
+    test "black en passant capture" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :black, {:f, 4})
+        |> Chexx.put_piece(:pawn, :white, {:e, 2})
+        |> Chexx.move(:white, "e4")
+        |> Chexx.move(:black, "fxe3")
+
+
+      white_pawn = Chexx.piece_at(board, {:e, 3})
+      assert white_pawn.type == :pawn
+      assert white_pawn.color == :black
+
+      assert is_nil(Chexx.piece_at(board, {:e, 4})), "Pawn was not captured in an en passant capture."
+    end
   end
 end

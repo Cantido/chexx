@@ -4,7 +4,7 @@ defmodule Chexx do
   """
 
   def new do
-    []
+    %{history: [], pieces: []}
   end
 
   def put_piece(board, type, color, square) do
@@ -16,7 +16,14 @@ defmodule Chexx do
       raise "Not a valid place to put a piece"
     end
 
-    [%{type: type, color: color, square: square} | board]
+    pieces = [%{type: type, color: color, square: square} | board.pieces]
+    %{board | pieces: pieces}
+  end
+
+  defp put_move(board, move) do
+    Map.update!(board, :history, fn history ->
+      [move | history]
+    end)
   end
 
   defp is_valid_square({file, rank}) do
@@ -24,13 +31,15 @@ defmodule Chexx do
   end
 
   def delete_piece(board, square) do
-    Enum.reject(board, fn piece ->
-      piece.square == square
+    Map.update!(board, :pieces, fn pieces ->
+      Enum.reject(pieces, fn piece ->
+        piece.square == square
+      end)
     end)
   end
 
   def piece_at(board, square) do
-    board
+    board.pieces
     |> Enum.find(fn piece ->
       piece.square == square
     end)
@@ -67,7 +76,7 @@ defmodule Chexx do
           case {by, rank} do
             {:white, 4} -> [down(destination, 1), down(destination, 2)]
             {:white, _} -> [down(destination, 1)]
-            {:black, 4} -> [up(destination, 1), up(destination, 2)]
+            {:black, 5} -> [up(destination, 1), up(destination, 2)]
             {:black, _} -> [up(destination, 1)]
           end
         String.match?(movement, @pawn_capture_notation) ->
@@ -98,17 +107,67 @@ defmodule Chexx do
       raise "Cannot capture your own piece!"
     end
 
+    {en_passant_captured_file, en_passant_captured_rank} = en_passant_captured_square =
+      case by do
+        :white -> down(destination)
+        :black -> up(destination)
+      end
+
+    # Most recent move was to current pos
+    captured_pawn_last_moved_to_this_square? =
+      Enum.at(board.history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
+
+    # captured pawn's previous move was two squares
+    captured_pawn_didnt_move_previously? =
+      Enum.take_every(board.history, 2)
+      |> Enum.all?(fn move ->
+        {forbidden_file, forbidden_rank} =
+          case by do
+            :white -> down(en_passant_captured_square)
+            :black -> up(en_passant_captured_square)
+          end
+        move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
+      end)
+
+    # capturing pawn must have advanced exactly three ranks
+    {_source_file, source_rank} = source_space
+
+    capturing_pawn_advanced_exactly_three_ranks? =
+      case by do
+        :white -> source_rank == 5
+        :black -> source_rank == 4
+      end
+
+    is_en_passant_capture? =
+      is_nil(captured_piece) and
+      captured_pawn_last_moved_to_this_square? and
+      captured_pawn_didnt_move_previously? and
+      capturing_pawn_advanced_exactly_three_ranks?
+
+
+    board =
+      board
+      |> delete_piece(source_space)
+
+    board =
+      if is_en_passant_capture? do
+
+
+        delete_piece(board, en_passant_captured_square)
+      else
+        delete_piece(board, destination)
+      end
+
     board
-    |> delete_piece(source_space)
-    |> delete_piece(destination)
     |> put_piece(moving_piece.type, moving_piece.color, destination)
+    |> put_move(movement)
   end
 
-  defp up({file, rank}, squares) do
+  defp up({file, rank}, squares \\ 1) do
     {file, rank + squares}
   end
 
-  defp down({file, rank}, squares) do
+  defp down({file, rank}, squares \\ 1) do
     {file, rank - squares}
   end
 
@@ -139,6 +198,4 @@ defmodule Chexx do
   defp number_to_file(6), do: :f
   defp number_to_file(7), do: :g
   defp number_to_file(8), do: :h
-
-
 end
