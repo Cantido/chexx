@@ -70,7 +70,7 @@ defmodule ChexxTest do
                 file <- file() do
         assert_raise RuntimeError, fn ->
           Chexx.new()
-          |> Chexx.put_piece(color, piece, {file, 9})
+          |> Chexx.put_piece(piece, color, {file, 9})
         end
       end
     end
@@ -81,7 +81,7 @@ defmodule ChexxTest do
                 rank <- rank() do
         assert_raise RuntimeError, fn ->
           Chexx.new()
-          |> Chexx.put_piece(color, piece, {:i, rank})
+          |> Chexx.put_piece(piece, color, {:i, rank})
         end
       end
     end
@@ -92,7 +92,7 @@ defmodule ChexxTest do
                 file <- file() do
         assert_raise RuntimeError, fn ->
           Chexx.new()
-          |> Chexx.put_piece(color, piece, {file, 0})
+          |> Chexx.put_piece(piece, color, {file, 0})
         end
       end
     end

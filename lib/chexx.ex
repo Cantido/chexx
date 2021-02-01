@@ -3,11 +3,20 @@ defmodule Chexx do
   Documentation for `Chexx`.
   """
 
+  defguard is_color(color) when color == :black or color == :white
+  defguard is_piece(piece) when
+    piece == :king or
+    piece == :queen or
+    piece == :rook or
+    piece == :bishop or
+    piece == :knight or
+    piece == :pawn
+
   def new do
     %{history: [], pieces: []}
   end
 
-  def put_piece(board, type, color, square) do
+  def put_piece(board, type, color, square) when is_piece(type) and is_color(color) do
     if piece = piece_at(board, square) do
       raise "Square #{inspect(square)} square already has piece #{inspect(piece)}."
     end
