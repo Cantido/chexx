@@ -57,6 +57,14 @@ defmodule Chexx do
   @pawn_capture_notation ~r/^[a-h]x[a-h][1-8]$/
 
   def move(board, by, movement) do
+    piece_type_moved =
+      cond do
+        String.match?(movement, @pawn_notation) ->
+          :pawn
+        String.match?(movement, @pawn_capture_notation) ->
+          :pawn
+      end
+
     destination =
       cond do
         String.match?(movement, @pawn_notation) ->
@@ -73,11 +81,33 @@ defmodule Chexx do
       cond do
         String.match?(movement, @pawn_notation) ->
           {_file, rank} = destination
-          case {by, rank} do
-            {:white, 4} -> [down(destination, 1), down(destination, 2)]
-            {:white, _} -> [down(destination, 1)]
-            {:black, 5} -> [up(destination, 1), up(destination, 2)]
-            {:black, _} -> [up(destination, 1)]
+          move_one =
+            case by do
+              :white -> down(destination, 1)
+              :black -> up(destination, 1)
+            end
+
+          can_move_two? =
+            case {by, rank} do
+              {:white, 4} ->
+                is_nil(piece_at(board, destination)) and
+                is_nil(piece_at(board, down(destination, 1)))
+              {:white, _} -> false
+              {:black, 5} ->
+                is_nil(piece_at(board, destination)) and
+                is_nil(piece_at(board, up(destination, 1)))
+              {:black, _} -> false
+            end
+
+          if can_move_two? do
+            move_two =
+              case by do
+                :white -> down(destination, 2)
+                :black -> up(destination, 2)
+              end
+            [move_one, move_two]
+          else
+            [move_one]
           end
         String.match?(movement, @pawn_capture_notation) ->
           starting_file = String.at(movement, 0) |> String.to_existing_atom()
@@ -91,7 +121,11 @@ defmodule Chexx do
     possible_source_spaces =
       possible_starting_positions
       |> Enum.filter(fn possible_starting_position ->
-        piece_at(board, possible_starting_position)
+        possible_moved_piece = piece_at(board, possible_starting_position)
+
+        not is_nil(possible_moved_piece) and
+          possible_moved_piece.color == by and
+          possible_moved_piece.type == piece_type_moved
       end)
 
     if Enum.empty?(possible_source_spaces) do
@@ -99,9 +133,13 @@ defmodule Chexx do
     end
 
     source_space = Enum.at(possible_source_spaces, 0)
-    moving_piece = piece_at(board, source_space)
 
+    moving_piece = piece_at(board, source_space)
     captured_piece = piece_at(board, destination)
+
+    if moving_piece.color != by do
+      raise "Cannot move the other player's pieces."
+    end
 
     if not is_nil(captured_piece) and captured_piece.color == by do
       raise "Cannot capture your own piece!"

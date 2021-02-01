@@ -138,6 +138,22 @@ defmodule ChexxTest do
         assert piece.color == :white
     end
 
+    test "can't move the other player's pieces" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :white, {:e, 3})
+        |> Chexx.move(:black, "e4")
+      end
+    end
+
+    test "can't move other pieces via pawn notation" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:bishop, :white, {:e, 3})
+        |> Chexx.move(:white, "e4")
+      end
+    end
+
     test "can't move if there are no pieces that can be moved" do
       assert_raise RuntimeError, fn ->
         Chexx.new()
