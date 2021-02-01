@@ -57,32 +57,12 @@ defmodule Chexx do
   @pawn_capture_notation ~r/^[a-h]x[a-h][1-8]$/
 
   def move(board, by, movement) do
-    piece_type_moved =
-      cond do
-        String.match?(movement, @pawn_notation) ->
-          :pawn
-        String.match?(movement, @pawn_capture_notation) ->
-          :pawn
-        true ->
-          raise "Move #{inspect movement} not recognized"
-      end
-
-    destination =
+    {piece_type_moved, destination, possible_starting_positions, is_en_passant_capture?} =
       cond do
         String.match?(movement, @pawn_notation) ->
           file = String.at(movement, 0) |> String.to_existing_atom()
           {rank, ""} = String.at(movement, 1) |> Integer.parse()
-          {file, rank}
-        String.match?(movement, @pawn_capture_notation) ->
-          file = String.at(movement, 2) |> String.to_existing_atom()
-          {rank, ""} = String.at(movement, 3) |> Integer.parse()
-          {file, rank}
-      end
-
-    {possible_starting_positions, is_en_passant_capture?} =
-      cond do
-        String.match?(movement, @pawn_notation) ->
-          {_file, rank} = destination
+          destination = {file, rank}
 
           can_move_one? = is_nil(piece_at(board, destination))
 
@@ -109,14 +89,20 @@ defmodule Chexx do
                 :black -> up(destination, 2)
               end
 
+            allowed_moves =
             cond do
-              can_move_two? -> {[move_one, move_two], false}
-              can_move_one? -> {[move_one], false}
+              can_move_two? -> [move_one, move_two]
+              can_move_one? -> [move_one]
               true -> []
             end
+
+            {:pawn, destination, allowed_moves, false}
         String.match?(movement, @pawn_capture_notation) ->
+          file = String.at(movement, 2) |> String.to_existing_atom()
+          {destination_rank, ""} = String.at(movement, 3) |> Integer.parse()
+          destination = {file, destination_rank}
+
           starting_file = String.at(movement, 0) |> String.to_existing_atom()
-          {_file, destination_rank} = destination
           {_source_file, source_rank} = source =
             case by do
               :white -> down({starting_file, destination_rank}, 1)
@@ -167,10 +153,12 @@ defmodule Chexx do
 
 
           if regular_capture? or en_passant_capture? do
-            {[source], en_passant_capture?}
+            {:pawn, destination, [source], en_passant_capture?}
           else
-            {[], false}
+            {:pawn, destination, [], false}
           end
+        true ->
+          raise "Move #{inspect movement} not recognized"
       end
 
     possible_source_spaces =
