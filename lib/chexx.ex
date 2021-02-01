@@ -111,98 +111,100 @@ defmodule Chexx do
       } = parse_notation(notation)
 
     {possible_starting_positions, is_en_passant_capture?} =
-      cond do
-        piece_type_moved == :pawn and not is_capture? ->
-          {_file, rank} = destination
+      case piece_type_moved do
+        :pawn ->
+          if is_capture? do
+            {_file, destination_rank} = destination
 
-          can_move_one? = is_nil(piece_at(board, destination))
-
-          can_move_two? =
-            can_move_one? and
-              case {by, rank} do
-                {:white, 4} ->
-                    is_nil(piece_at(board, down(destination, 1)))
-                {:white, _} -> false
-                {:black, 5} ->
-                    is_nil(piece_at(board, up(destination, 1)))
-                {:black, _} -> false
-              end
-
-            move_one =
+            {_source_file, source_rank} = source =
               case by do
-                :white -> down(destination, 1)
-                :black -> up(destination, 1)
+                :white -> down({source_file, destination_rank}, 1)
+                :black -> up({source_file, destination_rank}, 1)
               end
 
-            move_two =
+            {en_passant_captured_file, en_passant_captured_rank} = en_passant_captured_square =
               case by do
-                :white -> down(destination, 2)
-                :black -> up(destination, 2)
+                :white -> down(destination)
+                :black -> up(destination)
               end
 
-            allowed_moves =
-            cond do
-              can_move_two? -> [move_one, move_two]
-              can_move_one? -> [move_one]
-              true -> []
+            piece_in_en_passant_capture_square = piece_at(board, en_passant_captured_square)
+
+            # Most recent move was to current pos
+            captured_pawn_last_moved_to_this_square? =
+              Enum.at(board.history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
+
+            # captured pawn's previous move was two squares
+            captured_pawn_didnt_move_previously? =
+              Enum.take_every(board.history, 2)
+              |> Enum.all?(fn move ->
+                {forbidden_file, forbidden_rank} =
+                  case by do
+                    :white -> down(en_passant_captured_square)
+                    :black -> up(en_passant_captured_square)
+                  end
+                move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
+              end)
+
+            # capturing pawn must have advanced exactly three ranks
+            capturing_pawn_advanced_exactly_three_ranks? =
+              case by do
+                :white -> source_rank == 5
+                :black -> source_rank == 4
+              end
+
+            en_passant_capture? =
+              not is_nil(piece_in_en_passant_capture_square) and
+              is_nil(piece_at(board, destination)) and
+              piece_in_en_passant_capture_square.type == :pawn and
+              captured_pawn_last_moved_to_this_square? and
+              captured_pawn_didnt_move_previously? and
+              capturing_pawn_advanced_exactly_three_ranks?
+
+            regular_capture? =
+              not is_nil(piece_at(board, destination))
+
+            if regular_capture? or en_passant_capture? do
+              {[source], en_passant_capture?}
+            else
+              {[], false}
             end
-
-            {allowed_moves, false}
-        piece_type_moved == :pawn and is_capture? ->
-          {_file, destination_rank} = destination
-
-          {_source_file, source_rank} = source =
-            case by do
-              :white -> down({source_file, destination_rank}, 1)
-              :black -> up({source_file, destination_rank}, 1)
-            end
-
-          {en_passant_captured_file, en_passant_captured_rank} = en_passant_captured_square =
-            case by do
-              :white -> down(destination)
-              :black -> up(destination)
-            end
-
-          piece_in_en_passant_capture_square = piece_at(board, en_passant_captured_square)
-
-          # Most recent move was to current pos
-          captured_pawn_last_moved_to_this_square? =
-            Enum.at(board.history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
-
-          # captured pawn's previous move was two squares
-          captured_pawn_didnt_move_previously? =
-            Enum.take_every(board.history, 2)
-            |> Enum.all?(fn move ->
-              {forbidden_file, forbidden_rank} =
-                case by do
-                  :white -> down(en_passant_captured_square)
-                  :black -> up(en_passant_captured_square)
-                end
-              move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
-            end)
-
-          # capturing pawn must have advanced exactly three ranks
-          capturing_pawn_advanced_exactly_three_ranks? =
-            case by do
-              :white -> source_rank == 5
-              :black -> source_rank == 4
-            end
-
-          en_passant_capture? =
-            not is_nil(piece_in_en_passant_capture_square) and
-            is_nil(piece_at(board, destination)) and
-            piece_in_en_passant_capture_square.type == :pawn and
-            captured_pawn_last_moved_to_this_square? and
-            captured_pawn_didnt_move_previously? and
-            capturing_pawn_advanced_exactly_three_ranks?
-
-          regular_capture? =
-            not is_nil(piece_at(board, destination))
-
-          if regular_capture? or en_passant_capture? do
-            {[source], en_passant_capture?}
           else
-            {[], false}
+            {_file, rank} = destination
+
+            can_move_one? = is_nil(piece_at(board, destination))
+
+            can_move_two? =
+              can_move_one? and
+                case {by, rank} do
+                  {:white, 4} ->
+                      is_nil(piece_at(board, down(destination, 1)))
+                  {:white, _} -> false
+                  {:black, 5} ->
+                      is_nil(piece_at(board, up(destination, 1)))
+                  {:black, _} -> false
+                end
+
+              move_one =
+                case by do
+                  :white -> down(destination, 1)
+                  :black -> up(destination, 1)
+                end
+
+              move_two =
+                case by do
+                  :white -> down(destination, 2)
+                  :black -> up(destination, 2)
+                end
+
+              allowed_moves =
+              cond do
+                can_move_two? -> [move_one, move_two]
+                can_move_one? -> [move_one]
+                true -> []
+              end
+
+              {allowed_moves, false}
           end
       end
 
