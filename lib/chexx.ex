@@ -151,8 +151,6 @@ defmodule Chexx do
 
     board =
       if is_en_passant_capture? do
-
-
         delete_piece(board, en_passant_captured_square)
       else
         delete_piece(board, destination)
