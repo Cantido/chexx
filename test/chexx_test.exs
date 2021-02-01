@@ -234,6 +234,14 @@ defmodule ChexxTest do
       assert piece.color == :black
     end
 
+    test "capture is required in a pawn capture" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :white, {:e, 3})
+        |> Chexx.move(:white, "exd4")
+      end
+    end
+
     test "white en passant capture" do
       board =
         Chexx.new()
