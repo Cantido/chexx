@@ -63,6 +63,17 @@ defmodule ChexxTest do
         assert piece.color == :white
     end
 
+    test "can move a black pawn down one square" do
+      piece =
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :black, {:e, 6})
+        |> Chexx.move(:black, "e5")
+        |> Chexx.piece_at({:e, 5})
+
+        assert piece.type == :pawn
+        assert piece.color == :black
+    end
+
     test "can move a white pawn up two squares if it is in the starting row" do
       piece =
         Chexx.new()
@@ -74,15 +85,33 @@ defmodule ChexxTest do
         assert piece.color == :white
     end
 
-    test "can move a black pawn down one square" do
+    test "can move a black pawn down two squares if it is in the starting row" do
       piece =
         Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 6})
+        |> Chexx.put_piece(:pawn, :black, {:e, 7})
         |> Chexx.move(:black, "e5")
         |> Chexx.piece_at({:e, 5})
 
         assert piece.type == :pawn
         assert piece.color == :black
+    end
+
+    test "can't move a white pawn up two squares if a piece is in the way" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :white, {:e, 2})
+        |> Chexx.put_piece(:pawn, :black, {:e, 3})
+        |> Chexx.move(:white, "e4")
+      end
+    end
+
+    test "can't move a black pawn down two squares if a piece is in the way" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :black, {:e, 7})
+        |> Chexx.put_piece(:pawn, :white, {:e, 6})
+        |> Chexx.move(:white, "e5")
+      end
     end
 
     test "can move a piece when two pieces can share a destination, as black" do
