@@ -274,4 +274,22 @@ defmodule ChexxTest do
       assert is_nil(Chexx.piece_at(board, {:e, 4})), "Pawn was not captured in an en passant capture."
     end
   end
+
+  describe "king moves" do
+    property "can move up" do
+      check all color <- color(),
+                start_rank <- member_of(1..7),
+                start_file <- file() do
+        dest_rank = start_rank + 1
+        piece_at_dest =
+          Chexx.new()
+          |> Chexx.put_piece(:king, color, {start_file, start_rank})
+          |> Chexx.move(color, "K#{start_file}#{dest_rank}")
+          |> Chexx.piece_at({start_file, dest_rank})
+
+        assert piece_at_dest.color == color
+        assert piece_at_dest.type == :king
+      end
+    end
+  end
 end

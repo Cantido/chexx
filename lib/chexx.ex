@@ -120,6 +120,7 @@ defmodule Chexx do
     {possible_starting_positions, is_en_passant_capture?} =
       case piece_type_moved do
         :pawn -> possible_pawn_sources(board, by, move)
+        :king -> {possible_king_sources(destination), false}
       end
 
     possible_source_spaces =
@@ -133,7 +134,7 @@ defmodule Chexx do
       end)
 
     if Enum.empty?(possible_source_spaces) do
-      raise "No piece found for #{by} to perform move #{inspect notation}"
+      raise "No piece found for #{by} to perform move #{inspect notation}. Board: #{inspect board}"
     end
 
     possible_source_count = Enum.count(possible_source_spaces)
@@ -188,18 +189,42 @@ defmodule Chexx do
     {file, rank + squares}
   end
 
+  def up_right(start, distance \\ 1) do
+    start
+    |> up(distance)
+    |> right(distance)
+  end
+
+  def right({file, rank}, squares \\ 1) do
+    new_file = number_to_file(file_to_number(file) + squares)
+    {new_file, rank}
+  end
+
+  def down_right(start, distance \\ 1) do
+    start
+    |> down(distance)
+    |> right(distance)
+  end
+
   def down({file, rank}, squares \\ 1) do
     {file, rank - squares}
   end
 
-  def left({file, rank}, squares) do
+  def down_left(start, distance \\ 1) do
+    start
+    |> down(distance)
+    |> left(distance)
+  end
+
+  def left({file, rank}, squares \\ 1) do
     new_file = number_to_file(file_to_number(file) - squares)
     {new_file, rank}
   end
 
-  def right({file, rank}, squares) do
-    new_file = number_to_file(file_to_number(file) + squares)
-    {new_file, rank}
+  def up_left(start, distance \\ 1) do
+    start
+    |> up(distance)
+    |> left(distance)
   end
 
   defp file_to_number(:a), do: 1
@@ -320,5 +345,20 @@ defmodule Chexx do
 
       {allowed_moves, false}
     end
+  end
+
+  defp possible_king_sources(destination) do
+    {file, rank} = destination
+    file_int = file_to_number(file)
+
+    for x <- [-1, 0, 1], y <- [-1, 0, 1] do
+      {file_int + x, rank + y}
+    end
+    |> Enum.filter(fn {source_file, source_rank} ->
+      source_rank in 1..8 and source_file in 1..8
+    end)
+    |> Enum.map(fn {source_file, source_rank} ->
+      {number_to_file(source_file), source_rank}
+    end)
   end
 end
