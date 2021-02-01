@@ -175,6 +175,11 @@ defmodule Chexx do
       raise "No piece found for #{by} to perform move #{inspect movement}"
     end
 
+    possible_source_count = Enum.count(possible_source_spaces)
+    if possible_source_count > 1 do
+      raise "Ambiguous move: #{inspect movement} can mean #{possible_source_count} possible moves. Possible source spaces: #{inspect possible_source_spaces}"
+    end
+
     source_space = Enum.at(possible_source_spaces, 0)
 
     moving_piece = piece_at(board, source_space)
