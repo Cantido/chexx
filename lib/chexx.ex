@@ -8,12 +8,12 @@ defmodule Chexx do
   end
 
   def put_piece(board, type, color, square) do
-    if not is_nil(piece_at(board, square)) do
-      raise "That square already has a piece"
+    if piece = piece_at(board, square) do
+      raise "Square #{inspect(square)} square already has piece #{inspect(piece)}."
     end
 
     if not is_valid_square(square) do
-      raise "Not a valid place to put a piece"
+      raise "Square #{inspect(square)}is not a valid place to put a piece"
     end
 
     pieces = [%{type: type, color: color, square: square} | board.pieces]
@@ -63,6 +63,8 @@ defmodule Chexx do
           :pawn
         String.match?(movement, @pawn_capture_notation) ->
           :pawn
+        true ->
+          raise "Move #{inspect movement} not recognized"
       end
 
     destination =
@@ -199,20 +201,20 @@ defmodule Chexx do
     |> put_move(movement)
   end
 
-  defp up({file, rank}, squares \\ 1) do
+  def up({file, rank}, squares \\ 1) do
     {file, rank + squares}
   end
 
-  defp down({file, rank}, squares \\ 1) do
+  def down({file, rank}, squares \\ 1) do
     {file, rank - squares}
   end
 
-  defp left({file, rank}, squares) do
+  def left({file, rank}, squares) do
     new_file = number_to_file(file_to_number(file) - squares)
     {new_file, rank}
   end
 
-  defp right({file, rank}, squares) do
+  def right({file, rank}, squares) do
     new_file = number_to_file(file_to_number(file) + squares)
     {new_file, rank}
   end
