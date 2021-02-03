@@ -305,12 +305,4 @@ defmodule ChexxTest do
       end
     end
   end
-
-  describe "rook moves" do
-    property "can move all directions, any distance" do
-      check all color <- color(),
-                start <- square(),
-                direction <- direction() do
-    end
-  end
 end
