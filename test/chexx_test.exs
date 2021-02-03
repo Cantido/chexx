@@ -3,6 +3,8 @@ defmodule ChexxTest do
   use ExUnitProperties
   doctest Chexx
 
+  # TODO: validate when the check or checkmate symbol appears
+
   defp file do
     member_of([
       :a, :b, :c, :d, :e, :f, :g, :h
