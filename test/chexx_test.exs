@@ -3,8 +3,6 @@ defmodule ChexxTest do
   use ExUnitProperties
   doctest Chexx
 
-  # TODO: validate when the check or checkmate symbol appears
-
   defp file do
     member_of([
       :a, :b, :c, :d, :e, :f, :g, :h
@@ -305,6 +303,14 @@ defmodule ChexxTest do
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :king
       end
+    end
+  end
+
+  describe "rook moves" do
+    property "can move all directions, any distance" do
+      check all color <- color(),
+                start <- square(),
+                direction <- direction() do
     end
   end
 end

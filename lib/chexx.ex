@@ -3,6 +3,8 @@ defmodule Chexx do
   Documentation for `Chexx`.
   """
 
+  # TODO: validate when the check or checkmate symbol appears
+
   defguard is_color(color) when color == :black or color == :white
   defguard is_piece(piece) when
     piece == :king or
