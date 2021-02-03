@@ -25,6 +25,19 @@ defmodule ChexxTest do
     StreamData.member_of([:black, :white])
   end
 
+  defp direction do
+    member_of([
+      :up,
+      :up_right,
+      :right,
+      :down_right,
+      :down,
+      :down_left,
+      :left,
+      :up_left
+    ])
+  end
+
   describe "put_piece" do
     property "a piece put on any square in an empty board can be fetched with piece_at" do
       check all square <- square(),
@@ -276,16 +289,16 @@ defmodule ChexxTest do
   end
 
   describe "king moves" do
-    property "can move up" do
+    property "can move all directions" do
       check all color <- color(),
-                start_rank <- member_of(1..7),
-                start_file <- file() do
-        dest_rank = start_rank + 1
+                direction <- direction() do
+        start = {:b, 2}
+        {dest_file, dest_rank} = Chexx.move_direction(start, direction, 1)
         piece_at_dest =
           Chexx.new()
-          |> Chexx.put_piece(:king, color, {start_file, start_rank})
-          |> Chexx.move(color, "K#{start_file}#{dest_rank}")
-          |> Chexx.piece_at({start_file, dest_rank})
+          |> Chexx.put_piece(:king, color, start)
+          |> Chexx.move(color, "K#{dest_file}#{dest_rank}")
+          |> Chexx.piece_at({dest_file, dest_rank})
 
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :king

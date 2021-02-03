@@ -185,6 +185,19 @@ defmodule Chexx do
     |> put_move(notation)
   end
 
+  def move_direction(square, direction, distance \\ 1) do
+    case direction do
+      :up -> up(square, distance)
+      :up_right -> up_right(square, distance)
+      :right -> right(square, distance)
+      :down_right -> down_right(square, distance)
+      :down -> down(square, distance)
+      :down_left -> down_left(square, distance)
+      :left -> left(square, distance)
+      :up_left -> up_left(square, distance)
+    end
+  end
+
   def up({file, rank}, squares \\ 1) do
     {file, rank + squares}
   end
