@@ -4,6 +4,7 @@ defmodule Chexx do
   """
 
   # TODO: validate when the check or checkmate symbol appears
+  # TODO: don't let a piece move to its own position, i.e. not actually move
 
   defguard is_color(color) when color == :black or color == :white
   defguard is_piece(piece) when
