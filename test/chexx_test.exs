@@ -10,7 +10,7 @@ defmodule ChexxTest do
   end
 
   defp rank do
-    member_of(1..8)
+    integer(1..8)
   end
 
   defp square do
@@ -302,6 +302,38 @@ defmodule ChexxTest do
 
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :king
+      end
+    end
+  end
+
+  defp max_distance({start_file, start_rank}, direction) do
+    case direction do
+      :up -> 8 - start_rank
+      :right -> 8 - Chexx.file_to_number(start_file)
+      :down -> start_rank - 1
+      :left -> Chexx.file_to_number(start_file) - 1
+    end
+  end
+
+  describe "rook moves" do
+    property "can move up, down, left, or right, any distance" do
+      check all color <- color(),
+                start <- square(),
+                direction <- member_of([:up, :right, :down, :left]),
+                max_distance = max_distance(start, direction),
+                max_distance > 0,
+                distance <- integer(1..max_distance) do
+
+        {dest_file, dest_rank} = Chexx.move_direction(start, direction, distance)
+
+        piece_at_dest =
+          Chexx.new()
+          |> Chexx.put_piece(:rook, color, start)
+          |> Chexx.move(color, "R#{dest_file}#{dest_rank}")
+          |> Chexx.piece_at({dest_file, dest_rank})
+
+        assert piece_at_dest.color == color
+        assert piece_at_dest.type == :rook
       end
     end
   end

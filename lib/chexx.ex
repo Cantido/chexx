@@ -124,6 +124,7 @@ defmodule Chexx do
       case piece_type_moved do
         :pawn -> possible_pawn_sources(board, by, move)
         :king -> {possible_king_sources(destination), false}
+        :rook -> {possible_rook_sources(destination), false}
       end
 
     possible_source_spaces =
@@ -243,23 +244,32 @@ defmodule Chexx do
     |> left(distance)
   end
 
-  defp file_to_number(:a), do: 1
-  defp file_to_number(:b), do: 2
-  defp file_to_number(:c), do: 3
-  defp file_to_number(:d), do: 4
-  defp file_to_number(:e), do: 5
-  defp file_to_number(:f), do: 6
-  defp file_to_number(:g), do: 7
-  defp file_to_number(:h), do: 8
+  def file_to_number(:a), do: 1
+  def file_to_number(:b), do: 2
+  def file_to_number(:c), do: 3
+  def file_to_number(:d), do: 4
+  def file_to_number(:e), do: 5
+  def file_to_number(:f), do: 6
+  def file_to_number(:g), do: 7
+  def file_to_number(:h), do: 8
 
-  defp number_to_file(1), do: :a
-  defp number_to_file(2), do: :b
-  defp number_to_file(3), do: :c
-  defp number_to_file(4), do: :d
-  defp number_to_file(5), do: :e
-  defp number_to_file(6), do: :f
-  defp number_to_file(7), do: :g
-  defp number_to_file(8), do: :h
+  def file_to_number(1), do: 1
+  def file_to_number(2), do: 2
+  def file_to_number(3), do: 3
+  def file_to_number(4), do: 4
+  def file_to_number(5), do: 5
+  def file_to_number(6), do: 6
+  def file_to_number(7), do: 7
+  def file_to_number(8), do: 8
+
+  def number_to_file(1), do: :a
+  def number_to_file(2), do: :b
+  def number_to_file(3), do: :c
+  def number_to_file(4), do: :d
+  def number_to_file(5), do: :e
+  def number_to_file(6), do: :f
+  def number_to_file(7), do: :g
+  def number_to_file(8), do: :h
 
   defp possible_pawn_sources(board, by, move) do
     %{
@@ -369,6 +379,26 @@ defmodule Chexx do
 
     for x <- [-1, 0, 1], y <- [-1, 0, 1] do
       {file_int + x, rank + y}
+    end
+    |> Enum.filter(fn {source_file, source_rank} ->
+      source_rank in 1..8 and source_file in 1..8
+    end)
+    |> Enum.map(fn {source_file, source_rank} ->
+      {number_to_file(source_file), source_rank}
+    end)
+  end
+
+  defp possible_rook_sources(destination) do
+    {file, rank} = destination
+    file_int = file_to_number(file)
+
+    for distance <- 1..7, direction <- [:up, :left, :down, :right] do
+      case direction do
+        :up -> {file_int, rank + distance}
+        :left -> {file_int - distance, rank}
+        :down -> {file_int, rank - distance}
+        :right -> {file_int + distance, rank}
+      end
     end
     |> Enum.filter(fn {source_file, source_rank} ->
       source_rank in 1..8 and source_file in 1..8
