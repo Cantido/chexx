@@ -15,6 +15,12 @@ defmodule Chexx do
     piece == :knight or
     piece == :pawn
 
+  defguard is_file(file) when file in [:a, :b, :c, :d, :e, :f, :g, :h]
+  defguard is_rank(rank) when rank in 1..8
+
+  def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
+  def is_valid_square(_), do: false
+
   def new do
     %{history: [], pieces: []}
   end
@@ -36,10 +42,6 @@ defmodule Chexx do
     Map.update!(board, :history, fn history ->
       [move | history]
     end)
-  end
-
-  defp is_valid_square({file, rank}) do
-    file in [:a, :b, :c, :d, :e, :f, :g, :h] and rank in 1..8
   end
 
   def delete_piece(board, square) do
@@ -190,37 +192,28 @@ defmodule Chexx do
 
     source_space = Enum.at(possible_source_spaces, 0)
 
-    captured_square =
+    capture_type =
       if is_en_passant_capture? do
         case by do
           :white -> down(destination)
           :black -> up(destination)
         end
       else
-        destination
+        if is_capture? do
+          :required
+        else
+          :forbidden
+        end
       end
 
-    captured_piece = piece_at(board, captured_square)
-
-    if not is_nil(captured_piece) and captured_piece.color == by do
-      raise "Cannot capture your own piece!"
-    end
-
-    piece_at_captured_square? = not is_nil(captured_piece)
-    unexpected_capture_flag = is_capture? and not piece_at_captured_square?
-    missing_capture_flag = piece_at_captured_square? and not is_capture?
-
-    if unexpected_capture_flag do
-      raise "Move #{notation} indicated a capture at #{inspect destination}, but there is no piece there."
-    end
-
-    if missing_capture_flag do
-      raise "Move #{notation} indicated no capture at #{inspect destination}, but there is a piece there."
-    end
-
     board
-    |> delete_piece(captured_square)
-    |> move_piece(source_space, destination, expect_type: piece_type_moved, expect_color: by)
+    |> move_piece(
+        source_space,
+        destination,
+        expect_type: piece_type_moved,
+        expect_color: by,
+        capture: capture_type
+      )
     |> put_move(notation)
   end
 
@@ -242,6 +235,37 @@ defmodule Chexx do
         raise "Expected a #{color} piece at #{inspect source}, but it was a #{piece.color} piece."
       end
     end
+
+    capture = Keyword.get(opts, :capture, :forbidden)
+
+    captured_square =
+      case capture do
+        :required -> dest
+        :allowed -> dest
+        {file, rank} when is_file(file) and is_rank(rank) -> {file, rank}
+        :forbidden -> nil
+      end
+
+    board =
+      if is_nil(captured_square) do
+        board
+      else
+        captured_piece = piece_at(board, captured_square)
+
+        if capture == :required and is_nil(captured_piece) do
+          raise "Move requires the destination be captured but there is no piece there."
+        end
+
+        if is_valid_square(capture) and is_nil(captured_piece) do
+          raise "Move requires the piece at #{inspect captured_square} be captured but there is no piece there."
+        end
+
+        if not is_nil(captured_piece) and captured_piece.color == piece.color do
+          raise "A piece cannot capture its own color."
+        end
+
+        delete_piece(board, captured_square)
+      end
 
     board
     |> delete_piece(source)
