@@ -145,35 +145,10 @@ defmodule Chexx do
         :black -> {:f, 8}
       end
 
-    king_start_piece = piece_at(board, king_start_pos)
-    king_dest_piece = piece_at(board, king_dest_pos)
-    rook_start_piece = piece_at(board, rook_start_pos)
-    rook_dest_piece = piece_at(board, rook_dest_pos)
-
-    cond do
-      is_nil(king_start_piece) ->
-        raise "King cannot castle, there's no king at #{inspect king_start_pos}."
-      not piece_equals?(king_start_piece, by, :king) ->
-        raise "King cannot castle, there's a #{king_start_piece.type} at #{inspect king_start_pos} where the king should be."
-      not is_nil(king_dest_piece) ->
-        raise "King cannot castle, there's a piece in the king's destination."
-
-      is_nil(rook_start_piece) ->
-        raise "King cannot castle, there's no rook at #{inspect rook_start_pos}!"
-      not piece_equals?(rook_start_piece, by, :rook) ->
-        raise "King cannot castle, there's a #{rook_start_piece.type} at #{inspect rook_start_pos} where the rook should be."
-      not is_nil(rook_dest_piece) ->
-        raise "King cannot castle, there's a piece in the rook's destination."
-      true ->
-        board
-        |> delete_piece(king_start_pos)
-        |> delete_piece(king_dest_pos)
-        |> delete_piece(rook_start_pos)
-        |> delete_piece(rook_dest_pos)
-        |> put_piece(:king, by, king_dest_pos)
-        |> put_piece(:rook, by, rook_dest_pos)
-        |> put_move(notation)
-    end
+    board
+    |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
+    |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by)
+    |> put_move(notation)
   end
 
   def piece_equals?(piece, color, type) do
@@ -215,8 +190,6 @@ defmodule Chexx do
 
     source_space = Enum.at(possible_source_spaces, 0)
 
-    moving_piece = piece_at(board, source_space)
-
     captured_square =
       if is_en_passant_capture? do
         case by do
@@ -226,10 +199,6 @@ defmodule Chexx do
       else
         destination
       end
-
-    if moving_piece.color != by do
-      raise "Cannot move the other player's pieces."
-    end
 
     captured_piece = piece_at(board, captured_square)
 
@@ -250,10 +219,33 @@ defmodule Chexx do
     end
 
     board
-    |> delete_piece(source_space)
     |> delete_piece(captured_square)
-    |> put_piece(moving_piece.type, moving_piece.color, destination)
+    |> move_piece(source_space, destination, expect_type: piece_type_moved, expect_color: by)
     |> put_move(notation)
+  end
+
+  def move_piece(board, source, dest, opts \\ []) do
+    piece = piece_at(board, source)
+
+    if is_nil(piece) do
+      raise "No piece at #{inspect source} to move."
+    end
+
+    if type = Keyword.get(opts, :expect_type) do
+      if type != piece.type do
+        raise "Expected a #{type} to be at #{inspect source}, but it was a #{piece.type} instead."
+      end
+    end
+
+    if color = Keyword.get(opts, :expect_color) do
+      if color != piece.color do
+        raise "Expected a #{color} piece at #{inspect source}, but it was a #{piece.color} piece."
+      end
+    end
+
+    board
+    |> delete_piece(source)
+    |> put_piece(piece.type, piece.color, dest)
   end
 
   def move_direction(square, direction, distance \\ 1) do
