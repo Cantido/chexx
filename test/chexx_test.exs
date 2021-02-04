@@ -337,4 +337,148 @@ defmodule ChexxTest do
       end
     end
   end
+
+  describe "white kingside castle" do
+    test "succeeds when pieces are in the right place" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.move(:white, "0-0")
+
+      actual_king = Chexx.piece_at(board, {:g, 1})
+      assert actual_king.type == :king
+      assert actual_king.color == :white
+
+      actual_rook = Chexx.piece_at(board, {:f, 1})
+      assert actual_rook.type == :rook
+      assert actual_rook.color == :white
+    end
+
+    test "can't castle if rook isn't there" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if rook isn't a rook" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:bishop, :white, {:h, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if king isn't there" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if king isn't a king" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:queen, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if there's a piece in the king's destination" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.put_piece(:knight, :white, {:g, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if there's a piece in the rook's destination" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.put_piece(:bishop, :white, {:f, 1})
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+  end
+
+  describe "black kingside castle" do
+    test "succeeds when pieces are in the right place" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.move(:black, "0-0")
+
+      actual_king = Chexx.piece_at(board, {:g, 8})
+      assert actual_king.type == :king
+      assert actual_king.color == :black
+
+      actual_rook = Chexx.piece_at(board, {:f, 8})
+      assert actual_rook.type == :rook
+      assert actual_rook.color == :black
+    end
+
+    test "can't castle if rook isn't there" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+
+    test "can't castle if rook isn't a rook" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:bishop, :black, {:h, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+
+    test "can't castle if king isn't there" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+
+    test "can't castle if king isn't a king" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:queen, :black, {:e, 8})
+        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+
+    test "can't castle if there's a piece in the king's destination" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        |> Chexx.put_piece(:knight, :black, {:g, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+
+    test "can't castle if there's a piece in the rook's destination" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        |> Chexx.put_piece(:bishop, :black, {:f, 8})
+        |> Chexx.move(:black, "0-0")
+      end
+    end
+  end
 end

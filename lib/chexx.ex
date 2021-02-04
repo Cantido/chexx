@@ -114,6 +114,73 @@ defmodule Chexx do
   end
 
   def move(board, by, notation) do
+    case notation do
+      "0-0" -> kingside_castle(board, by, notation)
+      notation -> simple_move(board, by, notation)
+    end
+  end
+
+  defp kingside_castle(board, by, notation) do
+    king_start_pos =
+      case by do
+        :white -> {:e, 1}
+        :black -> {:e, 8}
+      end
+
+    king_dest_pos =
+      case by do
+        :white -> {:g, 1}
+        :black -> {:g, 8}
+      end
+
+    rook_start_pos =
+      case by do
+        :white -> {:h, 1}
+        :black -> {:h, 8}
+      end
+
+    rook_dest_pos =
+      case by do
+        :white -> {:f, 1}
+        :black -> {:f, 8}
+      end
+
+    king_start_piece = piece_at(board, king_start_pos)
+    king_dest_piece = piece_at(board, king_dest_pos)
+    rook_start_piece = piece_at(board, rook_start_pos)
+    rook_dest_piece = piece_at(board, rook_dest_pos)
+
+    cond do
+      is_nil(king_start_piece) ->
+        raise "King cannot castle, there's no king at #{inspect king_start_pos}."
+      not piece_equals?(king_start_piece, by, :king) ->
+        raise "King cannot castle, there's a #{king_start_piece.type} at #{inspect king_start_pos} where the king should be."
+      not is_nil(king_dest_piece) ->
+        raise "King cannot castle, there's a piece in the king's destination."
+
+      is_nil(rook_start_piece) ->
+        raise "King cannot castle, there's no rook at #{inspect rook_start_pos}!"
+      not piece_equals?(rook_start_piece, by, :rook) ->
+        raise "King cannot castle, there's a #{rook_start_piece.type} at #{inspect rook_start_pos} where the rook should be."
+      not is_nil(rook_dest_piece) ->
+        raise "King cannot castle, there's a piece in the rook's destination."
+      true ->
+        board
+        |> delete_piece(king_start_pos)
+        |> delete_piece(king_dest_pos)
+        |> delete_piece(rook_start_pos)
+        |> delete_piece(rook_dest_pos)
+        |> put_piece(:king, by, king_dest_pos)
+        |> put_piece(:rook, by, rook_dest_pos)
+        |> put_move(notation)
+    end
+  end
+
+  def piece_equals?(piece, color, type) do
+    not is_nil(piece) and piece.color == color and piece.type == type
+  end
+
+  defp simple_move(board, by, notation) do
     %{
       moved_piece_type: piece_type_moved,
       destination: destination,
