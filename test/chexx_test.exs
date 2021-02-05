@@ -509,4 +509,22 @@ defmodule ChexxTest do
       end
     end
   end
+
+  describe "black queenside castle" do
+    test "succeeds when pieces are in the right place" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:rook, :black, {:a, 8})
+        |> Chexx.move(:black, "0-0-0")
+
+      actual_king = Chexx.piece_at(board, {:c, 8})
+      assert actual_king.type == :king
+      assert actual_king.color == :black
+
+      actual_rook = Chexx.piece_at(board, {:d, 8})
+      assert actual_rook.type == :rook
+      assert actual_rook.color == :black
+    end
+  end
 end
