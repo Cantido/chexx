@@ -118,6 +118,7 @@ defmodule Chexx do
   def move(board, by, notation) do
     case notation do
       "0-0" -> kingside_castle(board, by, notation)
+      "0-0-0" -> queenside_castle(board, by, notation)
       notation -> simple_move(board, by, notation)
     end
   end
@@ -147,6 +148,47 @@ defmodule Chexx do
         :black -> {:f, 8}
       end
 
+    board
+    |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
+    |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by)
+    |> put_move(notation)
+  end
+
+  defp queenside_castle(board, by, notation) do
+    king_start_pos =
+      case by do
+        :white -> {:e, 1}
+        :black -> {:e, 8}
+      end
+
+    king_dest_pos =
+      case by do
+        :white -> {:c, 1}
+        :black -> {:c, 8}
+      end
+
+    rook_start_pos =
+      case by do
+        :white -> {:a, 1}
+        :black -> {:a, 8}
+      end
+
+    rook_dest_pos =
+      case by do
+        :white -> {:d, 1}
+        :black -> {:d, 8}
+      end
+
+    traversed_square =
+      case by do
+        :white -> {:b, 1}
+        :black -> {:b, 8}
+      end
+
+    if piece_at(board, traversed_square) do
+      raise "Can't queenside castle, the intervening square #{inspect traversed_square} is occupied."
+    end
+    
     board
     |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
     |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by)

@@ -481,4 +481,32 @@ defmodule ChexxTest do
       end
     end
   end
+
+  describe "white queenside castle" do
+    test "succeeds when pieces are in the right place" do
+      board =
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        |> Chexx.move(:white, "0-0-0")
+
+      actual_king = Chexx.piece_at(board, {:c, 1})
+      assert actual_king.type == :king
+      assert actual_king.color == :white
+
+      actual_rook = Chexx.piece_at(board, {:d, 1})
+      assert actual_rook.type == :rook
+      assert actual_rook.color == :white
+    end
+
+    test "can't castle queenside if the intervening square is occupied" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        |> Chexx.put_piece(:knight, :white, {:b, 1})
+        |> Chexx.move(:white, "0-0-0")
+      end
+    end
+  end
 end
