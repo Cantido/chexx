@@ -220,6 +220,15 @@ defmodule ChexxTest do
       end
     end
 
+    test "can't jump the other player's pieces" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:pawn, :white, {:e, 3})
+        |> Chexx.put_piece(:pawn, :black, {:e, 4})
+        |> Chexx.move(:white, "e5")
+      end
+    end
+
     test "can't move other pieces via pawn notation" do
       assert_raise RuntimeError, fn ->
         Chexx.new()
@@ -334,6 +343,15 @@ defmodule ChexxTest do
 
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :rook
+      end
+    end
+
+    test "rook can't jump other pieces" do
+      assert_raise RuntimeError, "No valid moves found for white.", fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.put_piece(:bishop, :white, {:h, 2})
+        |> Chexx.move(:white, "Rh3")
       end
     end
   end
