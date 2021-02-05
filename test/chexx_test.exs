@@ -355,6 +355,28 @@ defmodule ChexxTest do
       assert actual_rook.color == :white
     end
 
+    test "can't castle if the king has moved before" do
+      assert_raise RuntimeError, "King cannot castle after having moved.", fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.move(:white, "Ke2")
+        |> Chexx.move(:white, "Ke1")
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
+    test "can't castle if the rook has moved before" do
+      assert_raise RuntimeError, "Rook cannot castle after having moved.", fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        |> Chexx.move(:white, "Rh2")
+        |> Chexx.move(:white, "Rh1")
+        |> Chexx.move(:white, "0-0")
+      end
+    end
+
     test "can't castle if rook isn't there" do
       assert_raise RuntimeError, fn ->
         Chexx.new()
@@ -497,6 +519,28 @@ defmodule ChexxTest do
       actual_rook = Chexx.piece_at(board, {:d, 1})
       assert actual_rook.type == :rook
       assert actual_rook.color == :white
+    end
+
+    test "can't castle if the king has moved before" do
+      assert_raise RuntimeError, "King cannot castle after having moved.", fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        |> Chexx.move(:white, "Ke2")
+        |> Chexx.move(:white, "Ke1")
+        |> Chexx.move(:white, "0-0-0")
+      end
+    end
+
+    test "can't castle if the rook has moved before" do
+      assert_raise RuntimeError, "Rook cannot castle after having moved.", fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :white, {:e, 1})
+        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        |> Chexx.move(:white, "Ra2")
+        |> Chexx.move(:white, "Ra1")
+        |> Chexx.move(:white, "0-0-0")
+      end
     end
 
     test "can't castle queenside if the intervening square is occupied" do

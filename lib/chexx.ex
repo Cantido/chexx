@@ -124,6 +124,36 @@ defmodule Chexx do
   end
 
   defp kingside_castle(board, by, notation) do
+    king_moved_before? =
+      Enum.any?(board.history, fn move ->
+        forbidden_string =
+          case by do
+            :white -> "Ke1"
+            :black -> "Ke8"
+          end
+
+        String.starts_with?(move, forbidden_string)
+      end)
+
+    if king_moved_before? do
+      raise "King cannot castle after having moved."
+    end
+
+    rook_moved_before? =
+      Enum.any?(board.history, fn move ->
+        forbidden_string =
+          case by do
+            :white -> "Rh1"
+            :black -> "Rh8"
+          end
+
+        String.starts_with?(move, forbidden_string)
+      end)
+
+    if rook_moved_before? do
+      raise "Rook cannot castle after having moved."
+    end
+
     king_start_pos =
       case by do
         :white -> {:e, 1}
@@ -155,6 +185,36 @@ defmodule Chexx do
   end
 
   defp queenside_castle(board, by, notation) do
+    king_moved_before? =
+      Enum.any?(board.history, fn move ->
+        forbidden_string =
+          case by do
+            :white -> "Ke1"
+            :black -> "Ke8"
+          end
+
+        String.starts_with?(move, forbidden_string)
+      end)
+
+    if king_moved_before? do
+      raise "King cannot castle after having moved."
+    end
+
+    rook_moved_before? =
+      Enum.any?(board.history, fn move ->
+        forbidden_string =
+          case by do
+            :white -> "Ra1"
+            :black -> "Ra8"
+          end
+
+        String.starts_with?(move, forbidden_string)
+      end)
+
+    if rook_moved_before? do
+      raise "Rook cannot castle after having moved."
+    end
+
     king_start_pos =
       case by do
         :white -> {:e, 1}
@@ -188,7 +248,7 @@ defmodule Chexx do
     if piece_at(board, traversed_square) do
       raise "Can't queenside castle, the intervening square #{inspect traversed_square} is occupied."
     end
-    
+
     board
     |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
     |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by)
