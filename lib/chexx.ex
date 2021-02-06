@@ -54,6 +54,8 @@ defmodule Chexx do
     end)
   end
 
+  def piece_at(_board, nil), do: nil
+
   def piece_at(board, square) do
     board.pieces
     |> Enum.find(fn piece ->
@@ -71,7 +73,7 @@ defmodule Chexx do
 
   @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
 
-  defp parse_notation(notation) do
+  defp parse_notation(notation, by) do
     unless String.match?(notation, @notation_regex) do
       raise "Notation #{inspect notation} not recognized"
     end
@@ -108,24 +110,81 @@ defmodule Chexx do
         String.to_existing_atom(source_rank_notation)
       end
 
+    source =
+      if is_nil(source_file) and is_nil(source_rank) do
+        nil
+      else
+        {source_file, source_rank}
+      end
+
+    capture_type =
+      if Map.get(captures, "capture_flag") == "x" do
+        :required
+      else
+        :forbidden
+      end
+
     %{
-      moved_piece_type: moved_piece,
-      destination: {dest_file, dest_rank},
-      capture?: Map.get(captures, "capture_flag") == "x",
-      source_file: source_file,
-      source_rank: source_rank
+      movements: [%{
+        piece_type: moved_piece,
+        piece_color: by,
+        source: source,
+        destination: {dest_file, dest_rank}
+      }],
+      capture: capture_type
     }
   end
 
   def move(board, by, notation) do
-    case notation do
-      "0-0" -> kingside_castle(board, by, notation)
-      "0-0-0" -> queenside_castle(board, by, notation)
-      notation -> simple_move(board, by, notation)
+    moves =
+      case notation do
+        "0-0" -> kingside_castle(board, by)
+        "0-0-0" -> queenside_castle(board, by)
+        notation -> simple_move(board, by, notation)
+      end
+
+    moves =
+      moves
+      |> Enum.filter(fn possible_move ->
+        Enum.all?(possible_move.movements, fn %{source: src, piece_type: piece_type, piece_color: piece_color} ->
+          src_piece = piece_at(board, src)
+
+          piece_color == by and
+            piece_equals?(src_piece, piece_color, piece_type)
+        end)
+      end)
+      |> Enum.reject(fn possible_move ->
+        Map.get(possible_move, :traverses, [])
+        |> Enum.any?(fn traversed_square ->
+          piece_at(board, traversed_square)
+        end)
+      end)
+      |> Enum.reject(fn possible_move ->
+        capture = Map.get(possible_move, :capture, :forbidden)
+        captured_square = Map.get(possible_move, :captures)
+        captured_piece = piece_at(board, captured_square)
+
+        capture == :required and
+          (is_nil(captured_piece) or captured_piece.color == by)
+      end)
+
+    if Enum.empty?(moves) do
+      raise "No valid moves found for #{by}."
     end
+
+    possible_moves_count = Enum.count(moves)
+    if possible_moves_count > 1 do
+      raise "Ambiguous move: #{inspect notation} can mean #{possible_moves_count} possible moves. Possible source spaces: #{inspect moves}"
+    end
+
+    move = Enum.at(moves, 0)
+
+    board
+    |> do_move(by, move)
+    |> put_move(notation)
   end
 
-  defp kingside_castle_move(board, by) do
+  defp kingside_castle(board, by) do
     king_moved_before? =
       Enum.any?(board.history, fn move ->
         forbidden_string =
@@ -180,23 +239,15 @@ defmodule Chexx do
         :black -> {:f, 8}
       end
 
-    %{
+    [%{
       movements: [
         %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
         %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
       ]
-    }
+    }]
   end
 
-  defp kingside_castle(board, by, notation) do
-    move = kingside_castle_move(board, by)
-
-    board
-    |> do_move(by, move)
-    |> put_move(notation)
-  end
-
-  defp queenside_castle_move(board, by) do
+  defp queenside_castle(board, by) do
     king_moved_before? =
       Enum.any?(board.history, fn move ->
         forbidden_string =
@@ -257,21 +308,13 @@ defmodule Chexx do
         :black -> {:b, 8}
       end
 
-    %{
+    [%{
       movements: [
         %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
         %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
       ],
       traverses: [traversed_square]
-    }
-  end
-
-  defp queenside_castle(board, by, notation) do
-    move = queenside_castle_move(board, by)
-
-    board
-    |> do_move(by, move)
-    |> put_move(notation)
+    }]
   end
 
   def piece_equals?(piece, color, type) do
@@ -279,66 +322,14 @@ defmodule Chexx do
   end
 
   defp simple_move(board, by, notation) do
-    %{
-      moved_piece_type: piece_type_moved,
-      destination: destination,
-      capture?: is_capture?
-    } = move = parse_notation(notation)
+    move = parse_notation(notation, by)
+    piece_movement = Enum.at(move.movements, 0)
 
-    possible_moves =
-      case piece_type_moved do
-        :pawn -> possible_pawn_sources(board, by, move)
-        :king -> possible_king_sources(board, by, destination)
-        :rook -> possible_rook_sources(board, by, destination)
-      end
-
-    possible_moves =
-      possible_moves
-      |> Enum.filter(fn possible_move ->
-        Enum.all?(possible_move.movements, fn %{source: src, piece_type: piece_type, piece_color: piece_color} ->
-          src_piece = piece_at(board, src)
-
-          piece_color == by and
-            piece_equals?(src_piece, piece_color, piece_type)
-        end)
-      end)
-      |> Enum.reject(fn possible_move ->
-        Map.get(possible_move, :traverses, [])
-        |> Enum.any?(fn traversed_square ->
-          piece_at(board, traversed_square)
-        end)
-      end)
-      |> Enum.filter(fn possible_move ->
-        capture = Map.get(possible_move, :capture, :forbidden)
-        captured_square = Map.get(possible_move, :captures)
-
-        if is_nil(captured_square) and is_capture? do
-          false
-        else
-          captured_piece = piece_at(board, captured_square)
-
-          cond do
-            is_capture? and is_nil(captured_piece) -> false
-            is_valid_square(capture) and is_nil(captured_piece) -> false
-            not is_nil(captured_piece) and captured_piece.color == by -> false
-            true -> true
-          end
-        end
-      end)
-
-    if Enum.empty?(possible_moves) do
-      raise "No valid moves found for #{by}."
+    case piece_movement.piece_type do
+      :pawn -> possible_pawn_sources(board, by, move)
+      :king -> possible_king_sources(board, by, piece_movement.destination)
+      :rook -> possible_rook_sources(board, by, piece_movement.destination)
     end
-
-    possible_moves_count = Enum.count(possible_moves)
-    if possible_moves_count > 1 do
-      raise "Ambiguous move: #{inspect notation} can mean #{possible_moves_count} possible moves. Possible source spaces: #{inspect possible_moves}"
-    end
-
-    move = Enum.at(possible_moves, 0)
-
-    do_move(board, by, move)
-    |> put_move(notation)
   end
 
   # TODO: Refactor move_piece to use this signature
@@ -463,12 +454,24 @@ defmodule Chexx do
   def number_to_file(7), do: :g
   def number_to_file(8), do: :h
 
+  require Logger
+
   defp possible_pawn_sources(board, by, move) do
     %{
-      destination: destination,
-      capture?: is_capture?,
-      source_file: source_file
+      movements: [%{source: source, destination: destination}],
+      capture: capture_type
       } = move
+
+    source_file =
+      if is_nil(source) do
+        elem(destination, 0)
+      else
+        elem(source, 0)
+      end
+
+    Logger.info("Capture type is #{capture_type}")
+
+    is_capture? = capture_type == :required
 
     if is_capture? do
       {_file, destination_rank} = destination
@@ -518,29 +521,24 @@ defmodule Chexx do
         captured_pawn_didnt_move_previously? and
         capturing_pawn_advanced_exactly_three_ranks?
 
-      regular_capture? =
-        not is_nil(piece_at(board, destination))
-
       captured_square =
-        cond do
-          regular_capture? -> destination
-          en_passant_capture? -> en_passant_captured_square
-          true -> nil
+        if en_passant_capture? do
+          en_passant_captured_square
+        else
+          destination
         end
 
-      if regular_capture? or en_passant_capture? do
-        [%{
-          movements: [%{
-            piece_type: :pawn,
-            piece_color: by,
-            source: source,
-            destination: destination
-          }],
-          captures: captured_square
-        }]
-      else
-        []
-      end
+      [%{
+        movements: [%{
+          piece_type: :pawn,
+          piece_color: by,
+          source: source,
+          destination: destination
+        }],
+        capture: :required,
+        captures: captured_square,
+        captured_piece_type: :pawn
+      }]
     else
       {_file, rank} = destination
 
@@ -616,7 +614,16 @@ defmodule Chexx do
       |> piece_equals?(player, :king)
     end)
     |> Enum.map(fn source ->
-      %{movements: [%{piece_type: :king, piece_color: player, source: source, destination: destination}]}
+      %{
+        movements: [%{
+          piece_type: :king,
+          piece_color: player,
+          source: source,
+          destination: destination
+        }],
+        capture: :allowed,
+        captures: destination
+      }
     end)
   end
 
@@ -646,6 +653,7 @@ defmodule Chexx do
       %{
         movements: [%{piece_type: :rook, piece_color: player, source: source, destination: destination}],
         traverses: squares_between(source, destination),
+        capture: :allowed,
         captures: destination
       }
     end)
