@@ -125,7 +125,7 @@ defmodule Chexx do
     end
   end
 
-  defp kingside_castle(board, by, notation) do
+  defp kingside_castle_move(board, by) do
     king_moved_before? =
       Enum.any?(board.history, fn move ->
         forbidden_string =
@@ -180,13 +180,23 @@ defmodule Chexx do
         :black -> {:f, 8}
       end
 
+    %{
+      movements: [
+        %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
+        %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
+      ]
+    }
+  end
+
+  defp kingside_castle(board, by, notation) do
+    move = kingside_castle_move(board, by)
+
     board
-    |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
-    |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by)
+    |> do_move(by, move)
     |> put_move(notation)
   end
 
-  defp queenside_castle(board, by, notation) do
+  defp queenside_castle_move(board, by) do
     king_moved_before? =
       Enum.any?(board.history, fn move ->
         forbidden_string =
@@ -247,9 +257,20 @@ defmodule Chexx do
         :black -> {:b, 8}
       end
 
+    %{
+      movements: [
+        %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
+        %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
+      ],
+      traverses: [traversed_square]
+    }
+  end
+
+  defp queenside_castle(board, by, notation) do
+    move = queenside_castle_move(board, by)
+
     board
-    |> move_piece(king_start_pos, king_dest_pos, expect_type: :king, expect_color: by)
-    |> move_piece(rook_start_pos, rook_dest_pos, expect_type: :rook, expect_color: by, traversed_squares: [traversed_square])
+    |> do_move(by, move)
     |> put_move(notation)
   end
 
@@ -316,10 +337,15 @@ defmodule Chexx do
 
     move = Enum.at(possible_moves, 0)
 
-    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
-      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
-    end)
+    do_move(board, by, move)
     |> put_move(notation)
+  end
+
+  # TODO: Refactor move_piece to use this signature
+  defp do_move(board, by, move) do
+    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
+      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by, traversed_squares: Map.get(move, :traverses, []))
+    end)
   end
 
   def move_piece(board, source, dest, opts \\ []) do
