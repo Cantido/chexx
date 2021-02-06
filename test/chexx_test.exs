@@ -374,7 +374,7 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the king has moved before" do
-      assert_raise RuntimeError, "King cannot castle after having moved.", fn ->
+      assert_raise RuntimeError, fn ->
         Chexx.new()
         |> Chexx.put_piece(:king, :white, {:e, 1})
         |> Chexx.put_piece(:rook, :white, {:h, 1})
@@ -385,7 +385,7 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the rook has moved before" do
-      assert_raise RuntimeError, "Rook cannot castle after having moved.", fn ->
+      assert_raise RuntimeError, fn ->
         Chexx.new()
         |> Chexx.put_piece(:king, :white, {:e, 1})
         |> Chexx.put_piece(:rook, :white, {:h, 1})
@@ -540,7 +540,7 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the king has moved before" do
-      assert_raise RuntimeError, "King cannot castle after having moved.", fn ->
+      assert_raise RuntimeError, fn ->
         Chexx.new()
         |> Chexx.put_piece(:king, :white, {:e, 1})
         |> Chexx.put_piece(:rook, :white, {:a, 1})
@@ -551,7 +551,7 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the rook has moved before" do
-      assert_raise RuntimeError, "Rook cannot castle after having moved.", fn ->
+      assert_raise RuntimeError, fn ->
         Chexx.new()
         |> Chexx.put_piece(:king, :white, {:e, 1})
         |> Chexx.put_piece(:rook, :white, {:a, 1})

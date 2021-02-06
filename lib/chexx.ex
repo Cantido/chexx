@@ -138,8 +138,8 @@ defmodule Chexx do
   def move(board, by, notation) do
     moves =
       case notation do
-        "0-0" -> kingside_castle(board, by)
-        "0-0-0" -> queenside_castle(board, by)
+        "0-0" -> kingside_castle(by)
+        "0-0-0" -> queenside_castle(by)
         notation -> simple_move(by, notation)
       end
 
@@ -189,36 +189,33 @@ defmodule Chexx do
     |> put_move(notation)
   end
 
-  defp kingside_castle(board, by) do
-    king_moved_before? =
-      Enum.any?(board.history, fn move ->
-        forbidden_string =
-          case by do
-            :white -> "Ke1"
-            :black -> "Ke8"
-          end
+  defp kingside_castle(by) do
+    match_history_fn = fn history ->
+      king_moved_before? =
+        Enum.any?(history, fn move ->
+          forbidden_string =
+            case by do
+              :white -> "Ke1"
+              :black -> "Ke8"
+            end
 
-        String.starts_with?(move, forbidden_string)
-      end)
+          String.starts_with?(move, forbidden_string)
+        end)
 
-    if king_moved_before? do
-      raise "King cannot castle after having moved."
+      rook_moved_before? =
+        Enum.any?(history, fn move ->
+          forbidden_string =
+            case by do
+              :white -> "Rh1"
+              :black -> "Rh8"
+            end
+
+          String.starts_with?(move, forbidden_string)
+        end)
+
+      not king_moved_before? and not rook_moved_before?
     end
 
-    rook_moved_before? =
-      Enum.any?(board.history, fn move ->
-        forbidden_string =
-          case by do
-            :white -> "Rh1"
-            :black -> "Rh8"
-          end
-
-        String.starts_with?(move, forbidden_string)
-      end)
-
-    if rook_moved_before? do
-      raise "Rook cannot castle after having moved."
-    end
 
     king_start_pos =
       case by do
@@ -248,39 +245,36 @@ defmodule Chexx do
       movements: [
         %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
         %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
-      ]
+      ],
+      match_history_fn: match_history_fn
     }]
   end
 
-  defp queenside_castle(board, by) do
-    king_moved_before? =
-      Enum.any?(board.history, fn move ->
-        forbidden_string =
-          case by do
-            :white -> "Ke1"
-            :black -> "Ke8"
-          end
+  defp queenside_castle(by) do
+    match_history_fn = fn history ->
+      king_moved_before? =
+        Enum.any?(history, fn move ->
+          forbidden_string =
+            case by do
+              :white -> "Ke1"
+              :black -> "Ke8"
+            end
 
-        String.starts_with?(move, forbidden_string)
-      end)
+          String.starts_with?(move, forbidden_string)
+        end)
 
-    if king_moved_before? do
-      raise "King cannot castle after having moved."
-    end
+      rook_moved_before? =
+        Enum.any?(history, fn move ->
+          forbidden_string =
+            case by do
+              :white -> "Ra1"
+              :black -> "Ra8"
+            end
 
-    rook_moved_before? =
-      Enum.any?(board.history, fn move ->
-        forbidden_string =
-          case by do
-            :white -> "Ra1"
-            :black -> "Ra8"
-          end
+          String.starts_with?(move, forbidden_string)
+        end)
 
-        String.starts_with?(move, forbidden_string)
-      end)
-
-    if rook_moved_before? do
-      raise "Rook cannot castle after having moved."
+      not king_moved_before? and not rook_moved_before?
     end
 
     king_start_pos =
@@ -318,7 +312,8 @@ defmodule Chexx do
         %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
         %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
       ],
-      traverses: [traversed_square]
+      traverses: [traversed_square],
+      match_history_fn: match_history_fn
     }]
   end
 
@@ -337,7 +332,6 @@ defmodule Chexx do
     end
   end
 
-  # TODO: Refactor move_piece to use this signature
   defp do_move(board, by, move) do
     Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
       move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by, traversed_squares: Map.get(move, :traverses, []))
