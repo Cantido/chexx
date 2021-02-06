@@ -140,7 +140,7 @@ defmodule Chexx do
       case notation do
         "0-0" -> kingside_castle(board, by)
         "0-0-0" -> queenside_castle(board, by)
-        notation -> simple_move(board, by, notation)
+        notation -> simple_move(by, notation)
       end
 
     moves =
@@ -166,6 +166,11 @@ defmodule Chexx do
 
         capture == :required and
           (is_nil(captured_piece) or captured_piece.color == by)
+      end)
+      |> Enum.filter(fn possible_move ->
+        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+
+        match_history_fn.(board.history)
       end)
 
     if Enum.empty?(moves) do
@@ -321,14 +326,14 @@ defmodule Chexx do
     not is_nil(piece) and piece.color == color and piece.type == type
   end
 
-  defp simple_move(board, by, notation) do
+  defp simple_move(by, notation) do
     move = parse_notation(notation, by)
     piece_movement = Enum.at(move.movements, 0)
 
     case piece_movement.piece_type do
-      :pawn -> possible_pawn_sources(board, by, move)
-      :king -> possible_king_sources(board, by, piece_movement.destination)
-      :rook -> possible_rook_sources(board, by, piece_movement.destination)
+      :pawn -> possible_pawn_sources(by, move)
+      :king -> possible_king_sources(by, piece_movement.destination)
+      :rook -> possible_rook_sources(by, piece_movement.destination)
     end
   end
 
@@ -456,7 +461,7 @@ defmodule Chexx do
 
   require Logger
 
-  defp possible_pawn_sources(board, by, move) do
+  defp possible_pawn_sources(by, move) do
     %{
       movements: [%{source: source, destination: destination}],
       capture: capture_type
@@ -488,23 +493,28 @@ defmodule Chexx do
           :black -> up(destination)
         end
 
-      piece_in_en_passant_capture_square = piece_at(board, en_passant_captured_square)
-
       # Most recent move was to current pos
-      captured_pawn_last_moved_to_this_square? =
-        Enum.at(board.history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
 
-      # captured pawn's previous move was two squares
-      captured_pawn_didnt_move_previously? =
-        Enum.take_every(board.history, 2)
-        |> Enum.all?(fn move ->
-          {forbidden_file, forbidden_rank} =
-            case by do
-              :white -> down(en_passant_captured_square)
-              :black -> up(en_passant_captured_square)
-            end
-          move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
-        end)
+
+      required_history_fn = fn history ->
+        captured_pawn_last_moved_to_this_square? =
+          Enum.at(history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
+
+        # captured pawn's previous move was two squares
+        captured_pawn_didnt_move_previously? =
+          Enum.take_every(history, 2)
+          |> Enum.all?(fn move ->
+            {forbidden_file, forbidden_rank} =
+              case by do
+                :white -> down(en_passant_captured_square)
+                :black -> up(en_passant_captured_square)
+              end
+            move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
+          end)
+
+        captured_pawn_last_moved_to_this_square? and
+          captured_pawn_didnt_move_previously?
+      end
 
       # capturing pawn must have advanced exactly three ranks
       capturing_pawn_advanced_exactly_three_ranks? =
@@ -513,22 +523,7 @@ defmodule Chexx do
           :black -> source_rank == 4
         end
 
-      en_passant_capture? =
-        not is_nil(piece_in_en_passant_capture_square) and
-        is_nil(piece_at(board, destination)) and
-        piece_in_en_passant_capture_square.type == :pawn and
-        captured_pawn_last_moved_to_this_square? and
-        captured_pawn_didnt_move_previously? and
-        capturing_pawn_advanced_exactly_three_ranks?
-
-      captured_square =
-        if en_passant_capture? do
-          en_passant_captured_square
-        else
-          destination
-        end
-
-      [%{
+      en_passant_move = %{
         movements: [%{
           piece_type: :pawn,
           piece_color: by,
@@ -536,22 +531,38 @@ defmodule Chexx do
           destination: destination
         }],
         capture: :required,
-        captures: captured_square,
+        captures: en_passant_captured_square,
+        captured_piece_type: :pawn,
+        match_history_fn: required_history_fn
+      }
+
+      regular_move = %{
+        movements: [%{
+          piece_type: :pawn,
+          piece_color: by,
+          source: source,
+          destination: destination
+        }],
+        capture: :required,
+        captures: destination,
         captured_piece_type: :pawn
-      }]
+      }
+
+      if capturing_pawn_advanced_exactly_three_ranks? do
+        [en_passant_move]
+      else
+        [regular_move]
+      end
     else
       {_file, rank} = destination
 
-      can_move_one? = is_nil(piece_at(board, destination))
-
       can_move_two? =
-        can_move_one? and
-          case {by, rank} do
-            {:white, 4} -> true
-            {:white, _} -> false
-            {:black, 5} -> true
-            {:black, _} -> false
-          end
+        case {by, rank} do
+          {:white, 4} -> true
+          {:white, _} -> false
+          {:black, 5} -> true
+          {:black, _} -> false
+        end
 
       move_one_source =
         case by do
@@ -590,13 +601,12 @@ defmodule Chexx do
 
       cond do
         can_move_two? -> [move_one, move_two]
-        can_move_one? -> [move_one]
-        true -> []
+        true -> [move_one]
       end
     end
   end
 
-  defp possible_king_sources(board, player, destination) do
+  defp possible_king_sources(player, destination) do
     {file, rank} = destination
     file_int = file_to_number(file)
 
@@ -608,10 +618,6 @@ defmodule Chexx do
     end)
     |> Enum.map(fn {source_file, source_rank} ->
       {number_to_file(source_file), source_rank}
-    end)
-    |> Enum.filter(fn source ->
-      piece_at(board, source)
-      |> piece_equals?(player, :king)
     end)
     |> Enum.map(fn source ->
       %{
@@ -627,7 +633,7 @@ defmodule Chexx do
     end)
   end
 
-  defp possible_rook_sources(board, player, destination) do
+  defp possible_rook_sources(player, destination) do
     {file, rank} = destination
     file_int = file_to_number(file)
 
@@ -644,10 +650,6 @@ defmodule Chexx do
     end)
     |> Enum.map(fn {source_file, source_rank} ->
       {number_to_file(source_file), source_rank}
-    end)
-    |> Enum.filter(fn source ->
-      piece_at(board, source)
-      |> piece_equals?(player, :rook)
     end)
     |> Enum.map(fn source ->
       %{
