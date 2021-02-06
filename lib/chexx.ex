@@ -44,6 +44,8 @@ defmodule Chexx do
     end)
   end
 
+  def delete_piece(board, square) when is_nil(square), do: board
+
   def delete_piece(board, square) do
     Map.update!(board, :pieces, fn pieces ->
       Enum.reject(pieces, fn piece ->
@@ -272,17 +274,35 @@ defmodule Chexx do
     possible_moves =
       possible_moves
       |> Enum.filter(fn possible_move ->
-        possible_moved_piece = piece_at(board, possible_move.source)
+        Enum.all?(possible_move.movements, fn %{source: src, piece_type: piece_type, piece_color: piece_color} ->
+          src_piece = piece_at(board, src)
 
-        not is_nil(possible_moved_piece) and
-          possible_moved_piece.color == by and
-          possible_moved_piece.type == piece_type_moved
+          piece_color == by and
+            piece_equals?(src_piece, piece_color, piece_type)
+        end)
       end)
       |> Enum.reject(fn possible_move ->
         Map.get(possible_move, :traverses, [])
         |> Enum.any?(fn traversed_square ->
           piece_at(board, traversed_square)
         end)
+      end)
+      |> Enum.filter(fn possible_move ->
+        capture = Map.get(possible_move, :capture, :forbidden)
+        captured_square = Map.get(possible_move, :captures)
+
+        if is_nil(captured_square) and is_capture? do
+          false
+        else
+          captured_piece = piece_at(board, captured_square)
+
+          cond do
+            is_capture? and is_nil(captured_piece) -> false
+            is_valid_square(capture) and is_nil(captured_piece) -> false
+            not is_nil(captured_piece) and captured_piece.color == by -> false
+            true -> true
+          end
+        end
       end)
 
     if Enum.empty?(possible_moves) do
@@ -295,24 +315,10 @@ defmodule Chexx do
     end
 
     move = Enum.at(possible_moves, 0)
-    source_space = move.source
 
-    capture_type =
-      if is_capture? do
-        :required
-      else
-        :forbidden
-      end
-
-    board
-    |> move_piece(
-        source_space,
-        destination,
-        expect_type: piece_type_moved,
-        expect_color: by,
-        capture: capture_type,
-        captures: Map.get(move, :captures)
-      )
+    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
+      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
+    end)
     |> put_move(notation)
   end
 
@@ -341,32 +347,10 @@ defmodule Chexx do
       raise "Piece cannot move through other pieces"
     end
 
-    capture = Keyword.get(opts, :capture, :forbidden)
-
     captured_square = Keyword.get(opts, :captures)
 
-    board =
-      if is_nil(captured_square) do
-        board
-      else
-        captured_piece = piece_at(board, captured_square)
-
-        if capture == :required and is_nil(captured_piece) do
-          raise "Move requires the destination be captured but there is no piece there."
-        end
-
-        if is_valid_square(capture) and is_nil(captured_piece) do
-          raise "Move requires the piece at #{inspect captured_square} be captured but there is no piece there."
-        end
-
-        if not is_nil(captured_piece) and captured_piece.color == piece.color do
-          raise "A piece cannot capture its own color."
-        end
-
-        delete_piece(board, captured_square)
-      end
-
     board
+    |> delete_piece(captured_square)
     |> delete_piece(source)
     |> put_piece(piece.type, piece.color, dest)
   end
@@ -511,10 +495,25 @@ defmodule Chexx do
       regular_capture? =
         not is_nil(piece_at(board, destination))
 
-      cond do
-        regular_capture? -> [%{source: source, captures: destination}]
-        en_passant_capture? -> [%{source: source, captures: en_passant_captured_square}]
-        true -> []
+      captured_square =
+        cond do
+          regular_capture? -> destination
+          en_passant_capture? -> en_passant_captured_square
+          true -> nil
+        end
+
+      if regular_capture? or en_passant_capture? do
+        [%{
+          movements: [%{
+            piece_type: :pawn,
+            piece_color: by,
+            source: source,
+            destination: destination
+          }],
+          captures: captured_square
+        }]
+      else
+        []
       end
     else
       {_file, rank} = destination
@@ -530,17 +529,40 @@ defmodule Chexx do
             {:black, _} -> false
           end
 
-      move_one =
+      move_one_source =
         case by do
-          :white -> %{source: down(destination, 1)}
-          :black -> %{source: up(destination, 1)}
+          :white -> down(destination, 1)
+          :black -> up(destination, 1)
         end
 
-      move_two =
+      move_one =  %{
+        movements: [
+          %{
+            piece_type: :pawn,
+            piece_color: by,
+            source: move_one_source,
+            destination: destination
+          }
+        ]
+      }
+
+      move_two_source =
         case by do
-          :white -> %{source: down(destination, 2), traverses: [down(destination, 1)]}
-          :black -> %{source: up(destination, 2), traverses: [up(destination, 1)]}
+          :white -> down(destination, 2)
+          :black -> up(destination, 2)
         end
+
+      move_two = %{
+        movements: [
+          %{
+            piece_type: :pawn,
+            piece_color: by,
+            source: move_two_source,
+            destination: destination
+          }
+        ],
+        traverses: squares_between(move_two_source, destination)
+      }
 
       cond do
         can_move_two? -> [move_one, move_two]
@@ -568,7 +590,7 @@ defmodule Chexx do
       |> piece_equals?(player, :king)
     end)
     |> Enum.map(fn source ->
-      %{source: source}
+      %{movements: [%{piece_type: :king, piece_color: player, source: source, destination: destination}]}
     end)
   end
 
@@ -596,7 +618,7 @@ defmodule Chexx do
     end)
     |> Enum.map(fn source ->
       %{
-        source: source,
+        movements: [%{piece_type: :rook, piece_color: player, source: source, destination: destination}],
         traverses: squares_between(source, destination),
         captures: destination
       }
