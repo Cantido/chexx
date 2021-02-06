@@ -73,7 +73,7 @@ defmodule Chexx do
 
   @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
 
-  defp parse_notation(notation, by) do
+  defp parse_notation(notation) do
     unless String.match?(notation, @notation_regex) do
       raise "Notation #{inspect notation} not recognized"
     end
@@ -125,12 +125,9 @@ defmodule Chexx do
       end
 
     %{
-      movements: [%{
-        piece_type: moved_piece,
-        piece_color: by,
-        source: source,
-        destination: {dest_file, dest_rank}
-      }],
+      piece_type: moved_piece,
+      source: source,
+      destination: {dest_file, dest_rank},
       capture: capture_type
     }
   end
@@ -322,13 +319,12 @@ defmodule Chexx do
   end
 
   defp simple_move(by, notation) do
-    move = parse_notation(notation, by)
-    piece_movement = Enum.at(move.movements, 0)
+    move = parse_notation(notation)
 
-    case piece_movement.piece_type do
+    case move.piece_type do
       :pawn -> possible_pawn_sources(by, move)
-      :king -> possible_king_sources(by, piece_movement.destination)
-      :rook -> possible_rook_sources(by, piece_movement.destination)
+      :king -> possible_king_sources(by, move.destination)
+      :rook -> possible_rook_sources(by, move.destination)
     end
   end
 
@@ -457,9 +453,12 @@ defmodule Chexx do
 
   defp possible_pawn_sources(by, move) do
     %{
-      movements: [%{source: source, destination: destination}],
+      source: source,
+      destination: destination,
       capture: capture_type
       } = move
+
+    {destination_file, destination_rank} = destination
 
     source_file =
       if is_nil(source) do
@@ -470,11 +469,9 @@ defmodule Chexx do
 
     Logger.info("Capture type is #{capture_type}")
 
-    is_capture? = capture_type == :required
+    is_capture? = capture_type == :required or destination_file != source_file
 
     if is_capture? do
-      {_file, destination_rank} = destination
-
       {_source_file, source_rank} = source =
         case by do
           :white -> down({source_file, destination_rank}, 1)
