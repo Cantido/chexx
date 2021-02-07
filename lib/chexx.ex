@@ -110,22 +110,35 @@ defmodule Chexx do
       capture: capture_type
     }
   end
-
+  
   def move(game, by, notation) do
-    moves =
-      case notation do
-        "0-0" -> kingside_castle(by)
-        "0-0-0" -> queenside_castle(by)
-        notation ->
-          move = parse_notation(notation)
+    move =
+      possible_moves(notation, by)
+      |> disambiguate_moves(game, by)
 
-          case move.piece_type do
-            :pawn -> possible_pawn_sources(by, move)
-            :king -> possible_king_sources(by, move.destination)
-            :rook -> possible_rook_sources(by, move.destination)
-          end
-      end
+    board = Board.move(game.board, by, move)
 
+    game = put_move(game, notation)
+
+    %{game | board: board}
+  end
+
+  defp possible_moves(notation, player) do
+    case notation do
+      "0-0" -> kingside_castle(player)
+      "0-0-0" -> queenside_castle(player)
+      notation ->
+        notation = parse_notation(notation)
+
+        case notation.piece_type do
+          :pawn -> possible_pawn_sources(player, notation)
+          :king -> possible_king_sources(player, notation.destination)
+          :rook -> possible_rook_sources(player, notation.destination)
+        end
+    end
+  end
+
+  defp disambiguate_moves(moves, game, by) do
     moves =
       moves
       |> Enum.filter(fn possible_move ->
@@ -162,18 +175,12 @@ defmodule Chexx do
 
     possible_moves_count = Enum.count(moves)
     if possible_moves_count > 1 do
-      raise "Ambiguous move: #{inspect notation} can mean #{possible_moves_count} possible moves. Possible source spaces: #{inspect moves}"
+      raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves."
     end
 
-    move = Enum.at(moves, 0)
-
-    board = Board.move(game.board, by, move)
-
-    game = put_move(game, notation)
-
-
-    %{game | board: board}
+    Enum.at(moves, 0)
   end
+
 
   defp kingside_castle(by) do
     match_history_fn = fn history ->
