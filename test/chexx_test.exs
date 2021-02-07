@@ -356,7 +356,7 @@ defmodule ChexxTest do
     end
 
     test "rook can't jump other pieces" do
-      assert_raise RuntimeError, fn ->
+      assert_raise RuntimeError, "No valid moves found for white.", fn ->
         Chexx.new()
         |> Chexx.put_piece(:rook, :white, {:h, 1})
         |> Chexx.put_piece(:bishop, :white, {:h, 2})
