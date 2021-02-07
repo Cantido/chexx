@@ -56,9 +56,9 @@ defmodule Chexx.Board do
     end
   end
 
-  def move(board, by, move) do
-    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece: %{type: piece_type}}, board ->
-      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
+  def move(board, _by, move) do
+    Enum.reduce(move.movements, board, fn %{source: src, destination: dest}, board ->
+      move_piece(board, src, dest, captures: Map.get(move, :captures))
     end)
   end
 
@@ -67,18 +67,6 @@ defmodule Chexx.Board do
 
     if is_nil(piece) do
       raise "No piece at #{inspect source} to move."
-    end
-
-    if type = Keyword.get(opts, :expect_type) do
-      if type != piece.type do
-        raise "Expected a #{type} to be at #{inspect source}, but it was a #{piece.type} instead."
-      end
-    end
-
-    if color = Keyword.get(opts, :expect_color) do
-      if color != piece.color do
-        raise "Expected a #{color} piece at #{inspect source}, but it was a #{piece.color} piece."
-      end
     end
 
     captured_square = Keyword.get(opts, :captures)
