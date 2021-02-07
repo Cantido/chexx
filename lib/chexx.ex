@@ -327,7 +327,7 @@ defmodule Chexx do
 
   defp do_move(board, by, move) do
     Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
-      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by, traversed_squares: Map.get(move, :traverses, []))
+      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
     end)
   end
 
@@ -348,12 +348,6 @@ defmodule Chexx do
       if color != piece.color do
         raise "Expected a #{color} piece at #{inspect source}, but it was a #{piece.color} piece."
       end
-    end
-
-    if Enum.any?(Keyword.get(opts, :traversed_squares, []), fn traversed_square ->
-      piece_at(board, traversed_square)
-    end) do
-      raise "Piece cannot move through other pieces"
     end
 
     captured_square = Keyword.get(opts, :captures)
