@@ -3,6 +3,7 @@ defmodule Chexx do
   Documentation for `Chexx`.
   """
 
+  alias Chexx.AlgebraicNotation
   alias Chexx.Square
   alias Chexx.Board
   alias Chexx.Piece
@@ -41,67 +42,6 @@ defmodule Chexx do
     end)
   end
 
-  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
-
-  defp parse_notation(notation) do
-    unless String.match?(notation, @notation_regex) do
-      raise "Notation #{inspect notation} not recognized"
-    end
-
-    captures = Regex.named_captures(@notation_regex, notation)
-
-    moved_piece =
-      case Map.get(captures, "moved_piece") do
-        "K" -> :king
-        "Q" -> :queen
-        "R" -> :rook
-        "B" -> :bishop
-        "N" -> :knight
-        "p" -> :pawn
-        "" -> :pawn
-      end
-
-    dest_file = captures["dest_file"] |> String.to_existing_atom()
-    {dest_rank, ""} = captures["dest_rank"] |> Integer.parse()
-
-    source_file_notation = Map.get(captures, "source_file")
-    source_file =
-      if source_file_notation == "" do
-        nil
-      else
-        String.to_existing_atom(source_file_notation)
-      end
-
-    source_rank_notation = Map.get(captures, "source_rank")
-    source_rank =
-      if source_rank_notation == "" do
-        nil
-      else
-        String.to_existing_atom(source_rank_notation)
-      end
-
-    source =
-      cond do
-        not is_nil(source_file) and not is_nil(source_rank) -> Square.new(source_file, source_rank)
-        not is_nil(source_file) -> source_file
-        true -> nil
-      end
-
-    capture_type =
-      if Map.get(captures, "capture_flag") == "x" do
-        :required
-      else
-        :forbidden
-      end
-
-    %{
-      piece_type: moved_piece,
-      source: source,
-      destination: Square.new(dest_file, dest_rank),
-      capture: capture_type
-    }
-  end
-
   def move(game, by, notation) do
     move =
       possible_moves(notation, by)
@@ -115,16 +55,14 @@ defmodule Chexx do
   end
 
   defp possible_moves(notation, player) do
-    case notation do
-      "0-0" -> kingside_castle(player)
-      "0-0-0" -> queenside_castle(player)
-      notation ->
-        notation = parse_notation(notation)
-
-        case notation.piece_type do
-          :pawn -> possible_pawn_sources(player, notation)
-          :king -> possible_king_sources(player, notation.destination)
-          :rook -> possible_rook_sources(player, notation.destination)
+    case AlgebraicNotation.parse(notation) do
+      :kingside_castle -> kingside_castle(player)
+      :queenside_castle -> queenside_castle(player)
+      regular_move ->
+        case regular_move.piece_type do
+          :pawn -> possible_pawn_sources(player, regular_move)
+          :king -> possible_king_sources(player, regular_move.destination)
+          :rook -> possible_rook_sources(player, regular_move.destination)
         end
     end
   end
