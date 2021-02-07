@@ -4,6 +4,9 @@ defmodule Chexx.Touch do
   Encodes a start square and end square.
   """
 
+  alias Chexx.Square
+  alias Chexx.Piece
+
   @enforce_keys [
     :source,
     :destination,
@@ -15,7 +18,7 @@ defmodule Chexx.Touch do
     :piece
   ]
 
-  def new(source, destination, piece) do
+  def new(%Square{} = source, %Square{} = destination, %Piece{} = piece) do
     %__MODULE__{
       source: source,
       destination: destination,

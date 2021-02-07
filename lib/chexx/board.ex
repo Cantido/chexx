@@ -7,6 +7,8 @@ defmodule Chexx.Board do
 
   alias Chexx.Square
   alias Chexx.Piece
+  alias Chexx.Move
+  alias Chexx.Touch
 
   import Chexx, only: [
     is_color: 1,
@@ -22,7 +24,7 @@ defmodule Chexx.Board do
     %__MODULE__{}
   end
 
-  def put_piece(board, type, color, square) when is_piece(type) and is_color(color) do
+  def put_piece(%__MODULE__{} = board, type, color, %Square{} = square) when is_piece(type) and is_color(color) do
     square = Square.new(square)
 
     if piece = piece_at(board, square) do
@@ -37,9 +39,9 @@ defmodule Chexx.Board do
     %{board | occupied_positions: occupied_positions}
   end
 
-  def delete_piece(board, square) when is_nil(square), do: board
+  def delete_piece(%__MODULE__{} = board, nil), do: board
 
-  def delete_piece(board, square) do
+  def delete_piece(%__MODULE__{} = board, %Square{} = square) do
     Map.update!(board, :occupied_positions, fn occupied_positions ->
       Enum.reject(occupied_positions, fn occupied_position ->
         occupied_position.square == square
@@ -49,10 +51,10 @@ defmodule Chexx.Board do
 
   def piece_at(_board, nil), do: nil
 
-  def piece_at(board, square) do
+  def piece_at(%__MODULE__{} = board, %Square{} = square) do
     board.occupied_positions
     |> Enum.find(fn occupied_position ->
-      occupied_position.square == Square.new(square)
+      occupied_position.square == square
     end)
     |> case do
       nil -> nil
@@ -60,7 +62,7 @@ defmodule Chexx.Board do
     end
   end
 
-  def move(board, _by, move) do
+  def move(%__MODULE__{} = board, _by, %Move{} = move) do
     captured_square = Map.get(move, :captures)
 
     board = delete_piece(board, captured_square)
@@ -70,7 +72,7 @@ defmodule Chexx.Board do
     end)
   end
 
-  defp move_piece(board, touch) do
+  defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
     piece = piece_at(board, touch.source)
 
     if is_nil(piece) do

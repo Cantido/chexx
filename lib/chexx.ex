@@ -205,26 +205,26 @@ defmodule Chexx do
 
     king_start_pos =
       case by do
-        :white -> {:e, 1}
-        :black -> {:e, 8}
+        :white -> Square.new(:e, 1)
+        :black -> Square.new(:e, 8)
       end
 
     king_dest_pos =
       case by do
-        :white -> {:g, 1}
-        :black -> {:g, 8}
+        :white -> Square.new(:g, 1)
+        :black -> Square.new(:g, 8)
       end
 
     rook_start_pos =
       case by do
-        :white -> {:h, 1}
-        :black -> {:h, 8}
+        :white -> Square.new(:h, 1)
+        :black -> Square.new(:h, 8)
       end
 
     rook_dest_pos =
       case by do
-        :white -> {:f, 1}
-        :black -> {:f, 8}
+        :white -> Square.new(:f, 1)
+        :black -> Square.new(:f, 8)
       end
 
     [Move.new(%{
@@ -370,11 +370,7 @@ defmodule Chexx do
 
       en_passant_move =
         Move.new(%{
-          movements: [%{
-            piece: Piece.new(:pawn, by),
-            source: source,
-            destination: destination
-          }],
+          movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
           capture: :required,
           captures: en_passant_captured_square,
           captured_piece_type: :pawn,

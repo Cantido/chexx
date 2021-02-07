@@ -91,7 +91,7 @@ defmodule ChexxTest do
                 file <- file() do
         assert_raise RuntimeError, fn ->
           Board.new()
-          |> Board.put_piece(piece, color, {file, 9})
+          |> Board.put_piece(piece, color, Square.new(file, 9))
         end
       end
     end

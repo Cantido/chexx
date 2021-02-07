@@ -36,7 +36,7 @@ defmodule Chexx.Square do
     {file, rank}
   end
 
-  def to_algebraic(square) do
+  def to_algebraic(%__MODULE__{} = square) do
     {file, rank} = coords(square)
     "#{number_to_file(file)}#{rank}"
   end
@@ -45,7 +45,7 @@ defmodule Chexx.Square do
     source_rank in rank_range and source_file in file_range
   end
 
-  def move_direction(square, direction, distance \\ 1) do
+  def move_direction(%__MODULE__{} = square, direction, distance \\ 1) do
     case direction do
       :up -> up(square, distance)
       :up_right -> up_right(square, distance)
@@ -98,32 +98,32 @@ defmodule Chexx.Square do
     |> left(distance)
   end
 
-  def file_to_number(:a), do: 1
-  def file_to_number(:b), do: 2
-  def file_to_number(:c), do: 3
-  def file_to_number(:d), do: 4
-  def file_to_number(:e), do: 5
-  def file_to_number(:f), do: 6
-  def file_to_number(:g), do: 7
-  def file_to_number(:h), do: 8
+  defp file_to_number(:a), do: 1
+  defp file_to_number(:b), do: 2
+  defp file_to_number(:c), do: 3
+  defp file_to_number(:d), do: 4
+  defp file_to_number(:e), do: 5
+  defp file_to_number(:f), do: 6
+  defp file_to_number(:g), do: 7
+  defp file_to_number(:h), do: 8
 
-  def file_to_number(1), do: 1
-  def file_to_number(2), do: 2
-  def file_to_number(3), do: 3
-  def file_to_number(4), do: 4
-  def file_to_number(5), do: 5
-  def file_to_number(6), do: 6
-  def file_to_number(7), do: 7
-  def file_to_number(8), do: 8
+  defp file_to_number(1), do: 1
+  defp file_to_number(2), do: 2
+  defp file_to_number(3), do: 3
+  defp file_to_number(4), do: 4
+  defp file_to_number(5), do: 5
+  defp file_to_number(6), do: 6
+  defp file_to_number(7), do: 7
+  defp file_to_number(8), do: 8
 
-  def number_to_file(1), do: :a
-  def number_to_file(2), do: :b
-  def number_to_file(3), do: :c
-  def number_to_file(4), do: :d
-  def number_to_file(5), do: :e
-  def number_to_file(6), do: :f
-  def number_to_file(7), do: :g
-  def number_to_file(8), do: :h
+  defp number_to_file(1), do: :a
+  defp number_to_file(2), do: :b
+  defp number_to_file(3), do: :c
+  defp number_to_file(4), do: :d
+  defp number_to_file(5), do: :e
+  defp number_to_file(6), do: :f
+  defp number_to_file(7), do: :g
+  defp number_to_file(8), do: :h
 
   def squares_between(%__MODULE__{file: src_file, rank: src_rank}, %__MODULE__{file: dest_file, rank: dest_rank}) do
     cond do
