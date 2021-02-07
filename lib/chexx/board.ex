@@ -15,7 +15,7 @@ defmodule Chexx.Board do
   ]
 
   defstruct [
-    pieces: []
+    occupied_positions: []
   ]
 
   def new do
@@ -33,16 +33,16 @@ defmodule Chexx.Board do
       raise "Square #{inspect(square)}is not a valid place to put a piece"
     end
 
-    pieces = [%{piece: Piece.new(type, color), square: square} | board.pieces]
-    %{board | pieces: pieces}
+    occupied_positions = [%{piece: Piece.new(type, color), square: square} | board.occupied_positions]
+    %{board | occupied_positions: occupied_positions}
   end
 
   def delete_piece(board, square) when is_nil(square), do: board
 
   def delete_piece(board, square) do
-    Map.update!(board, :pieces, fn pieces ->
-      Enum.reject(pieces, fn piece ->
-        piece.square == square
+    Map.update!(board, :occupied_positions, fn occupied_positions ->
+      Enum.reject(occupied_positions, fn occupied_position ->
+        occupied_position.square == square
       end)
     end)
   end
@@ -50,9 +50,9 @@ defmodule Chexx.Board do
   def piece_at(_board, nil), do: nil
 
   def piece_at(board, square) do
-    board.pieces
-    |> Enum.find(fn piece ->
-      piece.square == Square.new(square)
+    board.occupied_positions
+    |> Enum.find(fn occupied_position ->
+      occupied_position.square == Square.new(square)
     end)
     |> case do
       nil -> nil
