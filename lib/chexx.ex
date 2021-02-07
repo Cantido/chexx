@@ -6,6 +6,8 @@ defmodule Chexx do
   alias Chexx.Square
   alias Chexx.Board
   alias Chexx.Piece
+  alias Chexx.Move
+  alias Chexx.Touch
 
   # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
@@ -224,13 +226,13 @@ defmodule Chexx do
         :black -> {:f, 8}
       end
 
-    [%{
+    [Move.new(%{
       movements: [
-        %{piece: Piece.new(:king, by), source: king_start_pos, destination: king_dest_pos},
-        %{piece: Piece.new(:rook, by), source: rook_start_pos, destination: rook_dest_pos},
+        Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
+        Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
       ],
       match_history_fn: match_history_fn
-    }]
+    })]
   end
 
   defp queenside_castle(by) do
@@ -262,42 +264,42 @@ defmodule Chexx do
 
     king_start_pos =
       case by do
-        :white -> {:e, 1}
-        :black -> {:e, 8}
+        :white -> Square.new(:e, 1)
+        :black -> Square.new(:e, 8)
       end
 
     king_dest_pos =
       case by do
-        :white -> {:c, 1}
-        :black -> {:c, 8}
+        :white -> Square.new(:c, 1)
+        :black -> Square.new(:c, 8)
       end
 
     rook_start_pos =
       case by do
-        :white -> {:a, 1}
-        :black -> {:a, 8}
+        :white -> Square.new(:a, 1)
+        :black -> Square.new(:a, 8)
       end
 
     rook_dest_pos =
       case by do
-        :white -> {:d, 1}
-        :black -> {:d, 8}
+        :white -> Square.new(:d, 1)
+        :black -> Square.new(:d, 8)
       end
 
     traversed_square =
       case by do
-        :white -> {:b, 1}
-        :black -> {:b, 8}
+        :white -> Square.new(:b, 1)
+        :black -> Square.new(:b, 8)
       end
 
-    [%{
+    [Move.new(%{
       movements: [
-        %{piece: Piece.new(:king, by), source: king_start_pos, destination: king_dest_pos},
-        %{piece: Piece.new(:rook, by), source: rook_start_pos, destination: rook_dest_pos},
+        Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
+        Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
       ],
       traverses: [traversed_square],
       match_history_fn: match_history_fn
-    }]
+    })]
   end
 
   def piece_equals?(piece, color, type) do
@@ -365,28 +367,26 @@ defmodule Chexx do
           :black -> source_rank == 4
         end
 
-      en_passant_move = %{
-        movements: [%{
-          piece: Piece.new(:pawn, by),
-          source: source,
-          destination: destination
-        }],
-        capture: :required,
-        captures: en_passant_captured_square,
-        captured_piece_type: :pawn,
-        match_history_fn: required_history_fn
-      }
+      en_passant_move =
+        Move.new(%{
+          movements: [%{
+            piece: Piece.new(:pawn, by),
+            source: source,
+            destination: destination
+          }],
+          capture: :required,
+          captures: en_passant_captured_square,
+          captured_piece_type: :pawn,
+          match_history_fn: required_history_fn
+        })
 
-      regular_move = %{
-        movements: [%{
-          piece: Piece.new(:pawn, by),
-          source: source,
-          destination: destination
-        }],
-        capture: :required,
-        captures: destination,
-        captured_piece_type: :pawn
-      }
+      regular_move =
+        Move.new(%{
+          movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
+          capture: :required,
+          captures: destination,
+          captured_piece_type: :pawn
+        })
 
       if capturing_pawn_advanced_exactly_three_ranks? do
         [en_passant_move]
@@ -410,15 +410,12 @@ defmodule Chexx do
           :black -> Square.up(destination, 1)
         end
 
-      move_one =  %{
-        movements: [
-          %{
-            piece: Piece.new(:pawn, by),
-            source: move_one_source,
-            destination: destination
-          }
-        ]
-      }
+      move_one =
+        Move.new(%{
+          movements: [
+            Touch.new(move_one_source, destination, Piece.new(:pawn, by))
+          ]
+        })
 
       move_two_source =
         case by do
@@ -426,16 +423,13 @@ defmodule Chexx do
           :black -> Square.up(destination, 2)
         end
 
-      move_two = %{
-        movements: [
-          %{
-            piece: Piece.new(:pawn, by),
-            source: move_two_source,
-            destination: destination
-          }
-        ],
-        traverses: Square.squares_between(move_two_source, destination)
-      }
+      move_two =
+        Move.new(%{
+          movements: [
+            Touch.new(move_two_source, destination, Piece.new(:pawn, by))
+          ],
+          traverses: Square.squares_between(move_two_source, destination)
+        })
 
       cond do
         can_move_two? -> [move_one, move_two]
@@ -452,15 +446,11 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      %{
-        movements: [%{
-          piece: Piece.new(:king, player),
-          source: source,
-          destination: destination
-        }],
+      Move.new(%{
+        movements: [Touch.new(source, destination, Piece.new(:king, player))],
         capture: :allowed,
         captures: destination
-      }
+      })
     end)
   end
 
@@ -472,12 +462,12 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      %{
-        movements: [%{piece: Piece.new(:rook, player), source: source, destination: destination}],
+      Move.new(%{
+        movements: [Touch.new(source, destination, Piece.new(:rook, player))],
         traverses: Square.squares_between(source, destination),
         capture: :allowed,
         captures: destination
-      }
+      })
     end)
   end
 end
