@@ -57,23 +57,24 @@ defmodule Chexx.Board do
   end
 
   def move(board, _by, move) do
-    Enum.reduce(move.movements, board, fn %{source: src, destination: dest}, board ->
-      move_piece(board, src, dest, captures: Map.get(move, :captures))
+    captured_square = Map.get(move, :captures)
+
+    board = delete_piece(board, captured_square)
+
+    Enum.reduce(move.movements, board, fn touch, board ->
+      move_piece(board, touch)
     end)
   end
 
-  defp move_piece(board, source, dest, opts) do
-    piece = piece_at(board, source)
+  defp move_piece(board, touch) do
+    piece = piece_at(board, touch.source)
 
     if is_nil(piece) do
-      raise "No piece at #{inspect source} to move."
+      raise "No piece at #{inspect touch.source} to move."
     end
 
-    captured_square = Keyword.get(opts, :captures)
-
     board
-    |> delete_piece(captured_square)
-    |> delete_piece(source)
-    |> put_piece(piece.type, piece.color, dest)
+    |> delete_piece(touch.source)
+    |> put_piece(piece.type, piece.color, touch.destination)
   end
 end
