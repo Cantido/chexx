@@ -5,6 +5,7 @@ defmodule Chexx do
 
   alias Chexx.Square
   alias Chexx.Board
+  alias Chexx.Piece
 
   # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
@@ -125,7 +126,7 @@ defmodule Chexx do
     moves =
       moves
       |> Enum.filter(fn possible_move ->
-        Enum.all?(possible_move.movements, fn %{source: src, piece_type: piece_type, piece_color: piece_color} ->
+        Enum.all?(possible_move.movements, fn %{source: src, piece: %{type: piece_type, color: piece_color}} ->
           src_piece = Board.piece_at(game.board, src)
 
           piece_color == by and
@@ -163,9 +164,7 @@ defmodule Chexx do
 
     move = Enum.at(moves, 0)
 
-    board =
-      game.board
-      |> Board.move(by, move)
+    board = Board.move(game.board, by, move)
 
     game = put_move(game, notation)
 
@@ -227,8 +226,8 @@ defmodule Chexx do
 
     [%{
       movements: [
-        %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
-        %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
+        %{piece: Piece.new(:king, by), source: king_start_pos, destination: king_dest_pos},
+        %{piece: Piece.new(:rook, by), source: rook_start_pos, destination: rook_dest_pos},
       ],
       match_history_fn: match_history_fn
     }]
@@ -293,8 +292,8 @@ defmodule Chexx do
 
     [%{
       movements: [
-        %{piece_type: :king, piece_color: by, source: king_start_pos, destination: king_dest_pos},
-        %{piece_type: :rook, piece_color: by, source: rook_start_pos, destination: rook_dest_pos},
+        %{piece: Piece.new(:king, by), source: king_start_pos, destination: king_dest_pos},
+        %{piece: Piece.new(:rook, by), source: rook_start_pos, destination: rook_dest_pos},
       ],
       traverses: [traversed_square],
       match_history_fn: match_history_fn
@@ -368,8 +367,7 @@ defmodule Chexx do
 
       en_passant_move = %{
         movements: [%{
-          piece_type: :pawn,
-          piece_color: by,
+          piece: Piece.new(:pawn, by),
           source: source,
           destination: destination
         }],
@@ -381,8 +379,7 @@ defmodule Chexx do
 
       regular_move = %{
         movements: [%{
-          piece_type: :pawn,
-          piece_color: by,
+          piece: Piece.new(:pawn, by),
           source: source,
           destination: destination
         }],
@@ -416,8 +413,7 @@ defmodule Chexx do
       move_one =  %{
         movements: [
           %{
-            piece_type: :pawn,
-            piece_color: by,
+            piece: Piece.new(:pawn, by),
             source: move_one_source,
             destination: destination
           }
@@ -433,8 +429,7 @@ defmodule Chexx do
       move_two = %{
         movements: [
           %{
-            piece_type: :pawn,
-            piece_color: by,
+            piece: Piece.new(:pawn, by),
             source: move_two_source,
             destination: destination
           }
@@ -459,8 +454,7 @@ defmodule Chexx do
     |> Enum.map(fn source ->
       %{
         movements: [%{
-          piece_type: :king,
-          piece_color: player,
+          piece: Piece.new(:king, player),
           source: source,
           destination: destination
         }],
@@ -479,7 +473,7 @@ defmodule Chexx do
     end)
     |> Enum.map(fn source ->
       %{
-        movements: [%{piece_type: :rook, piece_color: player, source: source, destination: destination}],
+        movements: [%{piece: Piece.new(:rook, player), source: source, destination: destination}],
         traverses: Square.squares_between(source, destination),
         capture: :allowed,
         captures: destination

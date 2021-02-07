@@ -57,7 +57,7 @@ defmodule Chexx.Board do
   end
 
   def move(board, by, move) do
-    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
+    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece: %{type: piece_type}}, board ->
       move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
     end)
   end
