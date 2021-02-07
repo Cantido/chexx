@@ -25,6 +25,7 @@ defmodule Chexx do
   defguard is_rank(rank) when rank in 1..8
 
   def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
+  def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(_), do: false
 
   def new do
@@ -36,11 +37,11 @@ defmodule Chexx do
   end
 
   def put_piece(game, type, color, square) do
-    %{game | board: Board.put_piece(game.board, type, color, square)}
+    %{game | board: Board.put_piece(game.board, type, color, Square.new(square))}
   end
 
   def piece_at(game, square) do
-    Board.piece_at(game.board, square)
+    Board.piece_at(game.board, Square.new(square))
   end
 
   defp put_move(game, move) do
@@ -89,10 +90,10 @@ defmodule Chexx do
       end
 
     source =
-      if is_nil(source_file) and is_nil(source_rank) do
-        nil
-      else
-        {source_file, source_rank}
+      cond do
+        not is_nil(source_file) and not is_nil(source_rank) -> Square.new(source_file, source_rank)
+        not is_nil(source_file) -> source_file
+        true -> nil
       end
 
     capture_type =
@@ -313,22 +314,22 @@ defmodule Chexx do
       capture: capture_type
       } = move
 
-    {destination_file, destination_rank} = destination
+    {destination_file, destination_rank} = Square.coords(destination)
 
     source_file =
-      if is_nil(source) do
-        Square.file(destination)
-      else
-        Square.file(source)
+      cond do
+        is_nil(source) -> Square.file(destination)
+        is_file(source) -> source
+        true -> Square.file(source)
       end
 
     is_capture? = capture_type == :required or destination_file != source_file
 
     if is_capture? do
-      {_source_file, source_rank} = source =
+      source =
         case by do
-          :white -> Square.down({source_file, destination_rank}, 1)
-          :black -> Square.up({source_file, destination_rank}, 1)
+          :white -> Square.new(source_file, destination_rank) |> Square.down(1)
+          :black -> Square.new(source_file, destination_rank) |> Square.up(1)
         end
 
       en_passant_captured_square =
@@ -363,8 +364,8 @@ defmodule Chexx do
       # capturing pawn must have advanced exactly three ranks
       capturing_pawn_advanced_exactly_three_ranks? =
         case by do
-          :white -> source_rank == 5
-          :black -> source_rank == 4
+          :white -> source.rank == 5
+          :black -> source.rank == 4
         end
 
       en_passant_move =

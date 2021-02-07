@@ -8,9 +8,7 @@ defmodule ChexxTest do
   doctest Chexx
 
   defp file do
-    member_of([
-      :a, :b, :c, :d, :e, :f, :g, :h
-    ])
+    integer(1..8)
   end
 
   defp rank do
@@ -19,6 +17,11 @@ defmodule ChexxTest do
 
   defp square do
     {file(), rank()}
+    |> StreamData.map(&Square.new/1)
+  end
+
+  defp square(within_file, within_rank) do
+    {integer(within_file), integer(within_rank)}
     |> StreamData.map(&Square.new/1)
   end
 
@@ -118,7 +121,7 @@ defmodule ChexxTest do
 
   describe "pawn moves" do
     property "can move a pawn up one square" do
-      check all destination <- {file(), member_of(2..8)} do
+      check all destination <- square(1..8, 2..8) do
         start_square = Square.down(destination)
 
         move = Square.to_algebraic(destination)
@@ -137,11 +140,10 @@ defmodule ChexxTest do
     end
 
     property "can move a black pawn down one square" do
-      check all dest_square <- {file(), member_of(1..7)} do
-        {dest_file, dest_rank} = dest_square
+      check all dest_square <- square(1..8, 1..7) do
         start_square = Square.up(dest_square)
 
-        move = "#{dest_file}#{dest_rank}"
+        move = Square.to_algebraic(dest_square)
 
         piece_at_dest =
           Chexx.new()

@@ -1,35 +1,47 @@
 defmodule Chexx.Square do
+  @enforce_keys [
+    :file,
+    :rank
+  ]
+  defstruct [
+    :file,
+    :rank
+  ]
+
+  def new(%__MODULE__{} = square) do
+    square
+  end
+
   def new({file, rank}) do
     new(file, rank)
   end
 
   def new(file, rank) when is_number(file) and is_number(rank) do
-    {file, rank}
+    %__MODULE__{file: file, rank: rank}
   end
 
   def new(file, rank) when is_atom(file) and is_number(rank) do
-    {file_to_number(file), rank}
+    new(file_to_number(file), rank)
   end
 
-  def file({file, _rank}) do
+  def file(%__MODULE__{file: file}) do
     file
   end
 
-  def rank({_file, rank}) do
+  def rank(%__MODULE__{rank: rank}) do
     rank
   end
 
-  def coords(square) do
-    # normalize using new()
-    new(square)
+  def coords(%__MODULE__{file: file, rank: rank}) do
+    {file, rank}
   end
 
   def to_algebraic(square) do
-    {file, rank} = new(square)
+    {file, rank} = coords(square)
     "#{number_to_file(file)}#{rank}"
   end
 
-  def within?({source_file, source_rank}, file_range, rank_range) do
+  def within?(%__MODULE__{file: source_file, rank: source_rank}, file_range, rank_range) do
     source_rank in rank_range and source_file in file_range
   end
 
@@ -46,41 +58,41 @@ defmodule Chexx.Square do
     end
   end
 
-  def up({file, rank}, squares \\ 1) do
-    {file, rank + squares}
+  def up(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
+    new(file, rank + squares)
   end
 
-  def up_right(start, distance \\ 1) do
+  def up_right(%__MODULE__{} = start, distance \\ 1) do
     start
     |> up(distance)
     |> right(distance)
   end
 
-  def right({file, rank}, squares \\ 1) do
-    {file + squares, rank}
+  def right(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
+    new(file + squares, rank)
   end
 
-  def down_right(start, distance \\ 1) do
+  def down_right(%__MODULE__{} = start, distance \\ 1) do
     start
     |> down(distance)
     |> right(distance)
   end
 
-  def down({file, rank}, squares \\ 1) do
-    {file, rank - squares}
+  def down(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
+    new(file, rank - squares)
   end
 
-  def down_left(start, distance \\ 1) do
+  def down_left(%__MODULE__{} = start, distance \\ 1) do
     start
     |> down(distance)
     |> left(distance)
   end
 
-  def left({file, rank}, squares \\ 1) do
-    {file - squares, rank}
+  def left(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
+    new(file - squares, rank)
   end
 
-  def up_left(start, distance \\ 1) do
+  def up_left(%__MODULE__{} = start, distance \\ 1) do
     start
     |> up(distance)
     |> left(distance)
@@ -113,15 +125,15 @@ defmodule Chexx.Square do
   def number_to_file(7), do: :g
   def number_to_file(8), do: :h
 
-  def squares_between({src_file, src_rank}, {dest_file, dest_rank}) do
+  def squares_between(%__MODULE__{file: src_file, rank: src_rank}, %__MODULE__{file: dest_file, rank: dest_rank}) do
     cond do
       src_file == dest_file ->
         for rank <- ranks_between(src_rank, dest_rank) do
-          {src_file, rank}
+          new(src_file, rank)
         end
       src_rank == dest_rank ->
         for file <- files_between(src_file, dest_file) do
-          {file, src_rank}
+          new(file, src_rank)
         end
     end
   end

@@ -30,7 +30,7 @@ defmodule Chexx.Board do
     end
 
     if not is_valid_square(square) do
-      raise "Square #{inspect(square)}is not a valid place to put a piece"
+      raise "Square #{inspect(square)} is not a valid place to put a piece"
     end
 
     occupied_positions = [%{piece: Piece.new(type, color), square: square} | board.occupied_positions]
