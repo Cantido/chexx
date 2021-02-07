@@ -62,7 +62,7 @@ defmodule Chexx.Board do
     end
   end
 
-  def move(%__MODULE__{} = board, _by, %Move{} = move) do
+  def move(%__MODULE__{} = board, %Move{} = move) do
     captured_square = Map.get(move, :captures)
 
     board = delete_piece(board, captured_square)

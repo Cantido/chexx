@@ -5,9 +5,11 @@ defmodule Chexx.Move do
   """
 
   @enforce_keys [
+    :player,
     :movements
   ]
   defstruct [
+    player: nil,
     movements: nil,
     capture: nil,
     captures: nil,
@@ -18,6 +20,7 @@ defmodule Chexx.Move do
 
   def new(map) when is_map(map) do
     params = Map.take(map, [
+      :player,
       :movements,
       :capture,
       :captures,

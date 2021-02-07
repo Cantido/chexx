@@ -110,13 +110,13 @@ defmodule Chexx do
       capture: capture_type
     }
   end
-  
+
   def move(game, by, notation) do
     move =
       possible_moves(notation, by)
-      |> disambiguate_moves(game, by)
+      |> disambiguate_moves(game)
 
-    board = Board.move(game.board, by, move)
+    board = Board.move(game.board, move)
 
     game = put_move(game, notation)
 
@@ -138,14 +138,14 @@ defmodule Chexx do
     end
   end
 
-  defp disambiguate_moves(moves, game, by) do
+  defp disambiguate_moves(moves, game) do
     moves =
       moves
       |> Enum.filter(fn possible_move ->
         Enum.all?(possible_move.movements, fn %{source: src, piece: %{type: piece_type, color: piece_color}} ->
           src_piece = Board.piece_at(game.board, src)
 
-          piece_color == by and
+          piece_color == possible_move.player and
             piece_equals?(src_piece, piece_color, piece_type)
         end)
       end)
@@ -161,7 +161,7 @@ defmodule Chexx do
         captured_piece = Board.piece_at(game.board, captured_square)
 
         capture == :required and
-          (is_nil(captured_piece) or captured_piece.color == by)
+          (is_nil(captured_piece) or captured_piece.color == possible_move.player)
       end)
       |> Enum.filter(fn possible_move ->
         match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
@@ -170,7 +170,7 @@ defmodule Chexx do
       end)
 
     if Enum.empty?(moves) do
-      raise "No valid moves found for #{by}."
+      raise "No valid moves found."
     end
 
     possible_moves_count = Enum.count(moves)
@@ -235,6 +235,7 @@ defmodule Chexx do
       end
 
     [Move.new(%{
+      player: by,
       movements: [
         Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
         Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
@@ -301,6 +302,7 @@ defmodule Chexx do
       end
 
     [Move.new(%{
+      player: by,
       movements: [
         Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
         Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
@@ -377,6 +379,7 @@ defmodule Chexx do
 
       en_passant_move =
         Move.new(%{
+          player: by,
           movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
           capture: :required,
           captures: en_passant_captured_square,
@@ -386,6 +389,7 @@ defmodule Chexx do
 
       regular_move =
         Move.new(%{
+          player: by,
           movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
           capture: :required,
           captures: destination,
@@ -416,6 +420,7 @@ defmodule Chexx do
 
       move_one =
         Move.new(%{
+          player: by,
           movements: [
             Touch.new(move_one_source, destination, Piece.new(:pawn, by))
           ]
@@ -429,6 +434,7 @@ defmodule Chexx do
 
       move_two =
         Move.new(%{
+          player: by,
           movements: [
             Touch.new(move_two_source, destination, Piece.new(:pawn, by))
           ],
@@ -451,6 +457,7 @@ defmodule Chexx do
     end)
     |> Enum.map(fn source ->
       Move.new(%{
+        player: player,
         movements: [Touch.new(source, destination, Piece.new(:king, player))],
         capture: :allowed,
         captures: destination
@@ -467,6 +474,7 @@ defmodule Chexx do
     end)
     |> Enum.map(fn source ->
       Move.new(%{
+        player: player,
         movements: [Touch.new(source, destination, Piece.new(:rook, player))],
         traverses: Square.squares_between(source, destination),
         capture: :allowed,
