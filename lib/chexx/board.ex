@@ -73,6 +73,14 @@ defmodule Chexx.Board do
       raise "No piece at #{inspect touch.source} to move."
     end
 
+    if touch.piece.type != piece.type do
+      raise "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."
+    end
+
+    if touch.piece.color != piece.color do
+      raise "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."
+    end
+
     board
     |> delete_piece(touch.source)
     |> put_piece(piece.type, piece.color, touch.destination)
