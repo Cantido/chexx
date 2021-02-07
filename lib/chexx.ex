@@ -4,6 +4,7 @@ defmodule Chexx do
   """
 
   alias Chexx.Square
+  alias Chexx.Board
 
   # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
@@ -24,55 +25,25 @@ defmodule Chexx do
   def is_valid_square(_), do: false
 
   def new do
-    %{history: [], pieces: []}
+    %{history: [], board: Board.new()}
   end
 
-  def put_piece(board, type, color, square) when is_piece(type) and is_color(color) do
-    square = Square.new(square)
-
-    if piece = piece_at(board, square) do
-      raise "Square #{inspect(square)} square already has piece #{inspect(piece)}."
-    end
-
-    if not is_valid_square(square) do
-      raise "Square #{inspect(square)}is not a valid place to put a piece"
-    end
-
-    pieces = [%{type: type, color: color, square: square} | board.pieces]
-    %{board | pieces: pieces}
+  def new(board) do
+    %{history: [], board: board}
   end
 
-  defp put_move(board, move) do
-    Map.update!(board, :history, fn history ->
+  def put_piece(game, type, color, square) do
+    %{game | board: Board.put_piece(game.board, type, color, square)}
+  end
+
+  def piece_at(game, square) do
+    Board.piece_at(game.board, square)
+  end
+
+  defp put_move(game, move) do
+    Map.update!(game, :history, fn history ->
       [move | history]
     end)
-  end
-
-  def delete_piece(board, square) when is_nil(square), do: board
-
-  def delete_piece(board, square) do
-    Map.update!(board, :pieces, fn pieces ->
-      Enum.reject(pieces, fn piece ->
-        piece.square == square
-      end)
-    end)
-  end
-
-  def piece_at(_board, nil), do: nil
-
-  def piece_at(board, square) do
-    board.pieces
-    |> Enum.find(fn piece ->
-      piece.square == Square.new(square)
-    end)
-    |> case do
-      nil -> nil
-      piece ->
-        Map.take(piece, [
-          :type,
-          :color
-        ])
-    end
   end
 
   @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
@@ -136,7 +107,7 @@ defmodule Chexx do
     }
   end
 
-  def move(board, by, notation) do
+  def move(game, by, notation) do
     moves =
       case notation do
         "0-0" -> kingside_castle(by)
@@ -155,7 +126,7 @@ defmodule Chexx do
       moves
       |> Enum.filter(fn possible_move ->
         Enum.all?(possible_move.movements, fn %{source: src, piece_type: piece_type, piece_color: piece_color} ->
-          src_piece = piece_at(board, src)
+          src_piece = Board.piece_at(game.board, src)
 
           piece_color == by and
             piece_equals?(src_piece, piece_color, piece_type)
@@ -164,13 +135,13 @@ defmodule Chexx do
       |> Enum.reject(fn possible_move ->
         Map.get(possible_move, :traverses, [])
         |> Enum.any?(fn traversed_square ->
-          piece_at(board, traversed_square)
+          Board.piece_at(game.board, traversed_square)
         end)
       end)
       |> Enum.reject(fn possible_move ->
         capture = Map.get(possible_move, :capture, :forbidden)
         captured_square = Map.get(possible_move, :captures)
-        captured_piece = piece_at(board, captured_square)
+        captured_piece = Board.piece_at(game.board, captured_square)
 
         capture == :required and
           (is_nil(captured_piece) or captured_piece.color == by)
@@ -178,7 +149,7 @@ defmodule Chexx do
       |> Enum.filter(fn possible_move ->
         match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
 
-        match_history_fn.(board.history)
+        match_history_fn.(game.history)
       end)
 
     if Enum.empty?(moves) do
@@ -192,9 +163,14 @@ defmodule Chexx do
 
     move = Enum.at(moves, 0)
 
-    board
-    |> do_move(by, move)
-    |> put_move(notation)
+    board =
+      game.board
+      |> Board.move(by, move)
+
+    game = put_move(game, notation)
+
+
+    %{game | board: board}
   end
 
   defp kingside_castle(by) do
@@ -327,39 +303,6 @@ defmodule Chexx do
 
   def piece_equals?(piece, color, type) do
     not is_nil(piece) and piece.color == color and piece.type == type
-  end
-
-  defp do_move(board, by, move) do
-    Enum.reduce(move.movements, board, fn %{source: src, destination: dest, piece_type: piece_type}, board ->
-      move_piece(board, src, dest, captures: Map.get(move, :captures), expect_type: piece_type, expect_color: by)
-    end)
-  end
-
-  def move_piece(board, source, dest, opts \\ []) do
-    piece = piece_at(board, source)
-
-    if is_nil(piece) do
-      raise "No piece at #{inspect source} to move."
-    end
-
-    if type = Keyword.get(opts, :expect_type) do
-      if type != piece.type do
-        raise "Expected a #{type} to be at #{inspect source}, but it was a #{piece.type} instead."
-      end
-    end
-
-    if color = Keyword.get(opts, :expect_color) do
-      if color != piece.color do
-        raise "Expected a #{color} piece at #{inspect source}, but it was a #{piece.color} piece."
-      end
-    end
-
-    captured_square = Keyword.get(opts, :captures)
-
-    board
-    |> delete_piece(captured_square)
-    |> delete_piece(source)
-    |> put_piece(piece.type, piece.color, dest)
   end
 
   defp possible_pawn_sources(by, move) do

@@ -3,6 +3,7 @@ defmodule ChexxTest do
   use ExUnitProperties
 
   alias Chexx.Square
+  alias Chexx.Board
 
   doctest Chexx
 
@@ -48,9 +49,9 @@ defmodule ChexxTest do
                 color <- color(),
                 piece <- piece_type() do
         piece_at_square =
-          Chexx.new()
-          |> Chexx.put_piece(piece, color, square)
-          |> Chexx.piece_at(square)
+          Board.new()
+          |> Board.put_piece(piece, color, square)
+          |> Board.piece_at(square)
 
         assert piece_at_square.type == piece
         assert piece_at_square.color == color
@@ -60,8 +61,8 @@ defmodule ChexxTest do
     property "piece_at returns nil when square is empty" do
       check all square <- square() do
         piece =
-          Chexx.new()
-          |> Chexx.piece_at(square)
+          Board.new()
+          |> Board.piece_at(square)
 
         assert piece == nil
       end
@@ -74,9 +75,9 @@ defmodule ChexxTest do
                 piece1 <- piece_type(),
                 piece2 <- piece_type() do
         assert_raise RuntimeError, fn ->
-          Chexx.new()
-          |> Chexx.put_piece(piece1, color1, square)
-          |> Chexx.put_piece(piece2, color2, square)
+          Board.new()
+          |> Board.put_piece(piece1, color1, square)
+          |> Board.put_piece(piece2, color2, square)
         end
       end
     end
@@ -86,8 +87,8 @@ defmodule ChexxTest do
                 piece <- piece_type(),
                 file <- file() do
         assert_raise RuntimeError, fn ->
-          Chexx.new()
-          |> Chexx.put_piece(piece, color, {file, 9})
+          Board.new()
+          |> Board.put_piece(piece, color, {file, 9})
         end
       end
     end
@@ -97,8 +98,8 @@ defmodule ChexxTest do
                 piece <- piece_type(),
                 rank <- rank() do
         assert_raise RuntimeError, fn ->
-          Chexx.new()
-          |> Chexx.put_piece(piece, color, Square.new(9, rank))
+          Board.new()
+          |> Board.put_piece(piece, color, Square.new(9, rank))
         end
       end
     end
@@ -108,8 +109,8 @@ defmodule ChexxTest do
                 piece <- piece_type(),
                 file <- file() do
         assert_raise RuntimeError, fn ->
-          Chexx.new()
-          |> Chexx.put_piece(piece, color, Square.new({file, 0}))
+          Board.new()
+          |> Board.put_piece(piece, color, Square.new({file, 0}))
         end
       end
     end
@@ -122,11 +123,13 @@ defmodule ChexxTest do
 
         move = Square.to_algebraic(destination)
 
-        piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:pawn, :white, start_square)
+        game =
+          Board.new()
+          |> Board.put_piece(:pawn, :white, start_square)
+          |> Chexx.new()
           |> Chexx.move(:white, move)
-          |> Chexx.piece_at(destination)
+
+        piece_at_dest = Board.piece_at(game.board, destination)
 
         assert piece_at_dest.type == :pawn
         assert piece_at_dest.color == :white
