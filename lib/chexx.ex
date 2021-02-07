@@ -137,7 +137,14 @@ defmodule Chexx do
       case notation do
         "0-0" -> kingside_castle(by)
         "0-0-0" -> queenside_castle(by)
-        notation -> simple_move(by, notation)
+        notation ->
+          move = parse_notation(notation)
+
+          case move.piece_type do
+            :pawn -> possible_pawn_sources(by, move)
+            :king -> possible_king_sources(by, move.destination)
+            :rook -> possible_rook_sources(by, move.destination)
+          end
       end
 
     moves =
@@ -316,16 +323,6 @@ defmodule Chexx do
 
   def piece_equals?(piece, color, type) do
     not is_nil(piece) and piece.color == color and piece.type == type
-  end
-
-  defp simple_move(by, notation) do
-    move = parse_notation(notation)
-
-    case move.piece_type do
-      :pawn -> possible_pawn_sources(by, move)
-      :king -> possible_king_sources(by, move.destination)
-      :rook -> possible_rook_sources(by, move.destination)
-    end
   end
 
   defp do_move(board, by, move) do
