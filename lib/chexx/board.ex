@@ -6,6 +6,7 @@ defmodule Chexx.Board do
   """
 
   alias Chexx.Square
+  alias Chexx.Piece
 
   import Chexx, only: [
     is_color: 1,
@@ -28,7 +29,7 @@ defmodule Chexx.Board do
       raise "Square #{inspect(square)}is not a valid place to put a piece"
     end
 
-    pieces = [%{type: type, color: color, square: square} | board.pieces]
+    pieces = [%{piece: Piece.new(type, color), square: square} | board.pieces]
     %{board | pieces: pieces}
   end
 
@@ -51,11 +52,7 @@ defmodule Chexx.Board do
     end)
     |> case do
       nil -> nil
-      piece ->
-        Map.take(piece, [
-          :type,
-          :color
-        ])
+      occupied_position -> Map.fetch!(occupied_position, :piece)
     end
   end
 
