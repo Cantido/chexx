@@ -1,4 +1,7 @@
 defmodule Chexx.Square do
+  defguard is_file(file) when file in 1..8 or file in [:a, :b, :c, :d, :e, :f, :g, :h]
+  defguard is_rank(rank) when rank in 1..8
+
   @enforce_keys [
     :file,
     :rank

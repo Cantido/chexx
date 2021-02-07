@@ -9,35 +9,26 @@ defmodule Chexx do
   alias Chexx.Move
   alias Chexx.Touch
 
+  import Chexx.Square, only: [is_file: 1]
+
+  defstruct [
+    history: [],
+    board: Board.new()
+  ]
+
   # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
 
-  defguard is_color(color) when color == :black or color == :white
-  defguard is_piece(piece) when
-    piece == :king or
-    piece == :queen or
-    piece == :rook or
-    piece == :bishop or
-    piece == :knight or
-    piece == :pawn
-
-  defguard is_file(file) when file in 1..8 or file in [:a, :b, :c, :d, :e, :f, :g, :h]
-  defguard is_rank(rank) when rank in 1..8
-
-  def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
-  def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
-  def is_valid_square(_), do: false
-
   def new do
-    %{history: [], board: Board.new()}
+    %__MODULE__{}
   end
 
-  def new(board) do
-    %{history: [], board: board}
+  def new(%Board{} = board) do
+    %__MODULE__{board: board}
   end
 
   def put_piece(game, type, color, square) do
-    %{game | board: Board.put_piece(game.board, type, color, Square.new(square))}
+    %__MODULE__{game | board: Board.put_piece(game.board, type, color, Square.new(square))}
   end
 
   def piece_at(game, square) do
@@ -110,7 +101,7 @@ defmodule Chexx do
       capture: capture_type
     }
   end
-  
+
   def move(game, by, notation) do
     move =
       possible_moves(notation, by)
@@ -142,11 +133,10 @@ defmodule Chexx do
     moves =
       moves
       |> Enum.filter(fn possible_move ->
-        Enum.all?(possible_move.movements, fn %{source: src, piece: %{type: piece_type, color: piece_color}} ->
-          src_piece = Board.piece_at(game.board, src)
+        Enum.all?(possible_move.movements, fn %{source: src, piece: expected_piece} ->
+          actual_piece = Board.piece_at(game.board, src)
 
-          piece_color == by and
-            piece_equals?(src_piece, piece_color, piece_type)
+          expected_piece.color == by and expected_piece == actual_piece
         end)
       end)
       |> Enum.reject(fn possible_move ->

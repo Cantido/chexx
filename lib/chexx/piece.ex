@@ -2,10 +2,16 @@ defmodule Chexx.Piece do
   @moduledoc """
   A piece type and color.
   """
-  import Chexx, only: [
-    is_color: 1,
-    is_piece: 1
-  ]
+
+  import Chexx.Color
+
+  defguard is_piece(piece) when
+    piece == :king or
+    piece == :queen or
+    piece == :rook or
+    piece == :bishop or
+    piece == :knight or
+    piece == :pawn
 
   @enforce_keys [
     :type,

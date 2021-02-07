@@ -10,11 +10,9 @@ defmodule Chexx.Board do
   alias Chexx.Move
   alias Chexx.Touch
 
-  import Chexx, only: [
-    is_color: 1,
-    is_piece: 1,
-    is_valid_square: 1
-  ]
+  import Chexx.Color
+  import Chexx.Piece, only: [is_piece: 1]
+  import Chexx.Square, only: [is_rank: 1, is_file: 1]
 
   defstruct [
     occupied_positions: []
@@ -48,6 +46,10 @@ defmodule Chexx.Board do
       end)
     end)
   end
+
+  def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
+  def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
+  def is_valid_square(_), do: false
 
   def piece_at(_board, nil), do: nil
 
