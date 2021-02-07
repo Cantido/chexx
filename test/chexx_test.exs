@@ -1,6 +1,9 @@
 defmodule ChexxTest do
   use ExUnit.Case
   use ExUnitProperties
+
+  alias Chexx.Square
+
   doctest Chexx
 
   defp file do
@@ -15,6 +18,7 @@ defmodule ChexxTest do
 
   defp square do
     {file(), rank()}
+    |> StreamData.map(&Square.new/1)
   end
 
   defp piece_type do
@@ -94,7 +98,7 @@ defmodule ChexxTest do
                 rank <- rank() do
         assert_raise RuntimeError, fn ->
           Chexx.new()
-          |> Chexx.put_piece(piece, color, {:i, rank})
+          |> Chexx.put_piece(piece, color, Square.new(9, rank))
         end
       end
     end
@@ -105,7 +109,7 @@ defmodule ChexxTest do
                 file <- file() do
         assert_raise RuntimeError, fn ->
           Chexx.new()
-          |> Chexx.put_piece(piece, color, {file, 0})
+          |> Chexx.put_piece(piece, color, Square.new({file, 0}))
         end
       end
     end
@@ -113,17 +117,16 @@ defmodule ChexxTest do
 
   describe "pawn moves" do
     property "can move a pawn up one square" do
-      check all dest_square <- {file(), member_of(2..8)} do
-        {dest_file, dest_rank} = dest_square
-        start_square = Chexx.down(dest_square)
+      check all destination <- {file(), member_of(2..8)} do
+        start_square = Square.down(destination)
 
-        move = "#{dest_file}#{dest_rank}"
+        move = Square.to_algebraic(destination)
 
         piece_at_dest =
           Chexx.new()
           |> Chexx.put_piece(:pawn, :white, start_square)
           |> Chexx.move(:white, move)
-          |> Chexx.piece_at(dest_square)
+          |> Chexx.piece_at(destination)
 
         assert piece_at_dest.type == :pawn
         assert piece_at_dest.color == :white
@@ -133,7 +136,7 @@ defmodule ChexxTest do
     property "can move a black pawn down one square" do
       check all dest_square <- {file(), member_of(1..7)} do
         {dest_file, dest_rank} = dest_square
-        start_square = Chexx.up(dest_square)
+        start_square = Square.up(dest_square)
 
         move = "#{dest_file}#{dest_rank}"
 
@@ -301,13 +304,13 @@ defmodule ChexxTest do
     property "can move all directions" do
       check all color <- color(),
                 direction <- direction() do
-        start = {:b, 2}
-        {dest_file, dest_rank} = Chexx.move_direction(start, direction, 1)
+        start = Chexx.Square.new(:b, 2)
+        destination = Chexx.Square.move_direction(start, direction, 1)
         piece_at_dest =
           Chexx.new()
           |> Chexx.put_piece(:king, color, start)
-          |> Chexx.move(color, "K#{dest_file}#{dest_rank}")
-          |> Chexx.piece_at({dest_file, dest_rank})
+          |> Chexx.move(color, "K#{Square.to_algebraic(destination)}")
+          |> Chexx.piece_at(destination)
 
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :king
@@ -315,12 +318,13 @@ defmodule ChexxTest do
     end
   end
 
-  defp max_distance({start_file, start_rank}, direction) do
+  defp max_distance(square, direction) do
+    {start_file, start_rank} = Square.coords(square)
     case direction do
       :up -> 8 - start_rank
-      :right -> 8 - Chexx.file_to_number(start_file)
+      :right -> 8 - start_file
       :down -> start_rank - 1
-      :left -> Chexx.file_to_number(start_file) - 1
+      :left -> start_file - 1
     end
   end
 
@@ -333,13 +337,13 @@ defmodule ChexxTest do
                 max_distance > 0,
                 distance <- integer(1..max_distance) do
 
-        {dest_file, dest_rank} = Chexx.move_direction(start, direction, distance)
+        destination = Square.move_direction(start, direction, distance)
 
         piece_at_dest =
           Chexx.new()
           |> Chexx.put_piece(:rook, color, start)
-          |> Chexx.move(color, "R#{dest_file}#{dest_rank}")
-          |> Chexx.piece_at({dest_file, dest_rank})
+          |> Chexx.move(color, "R#{Square.to_algebraic(destination)}")
+          |> Chexx.piece_at(destination)
 
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :rook

@@ -3,6 +3,8 @@ defmodule Chexx do
   Documentation for `Chexx`.
   """
 
+  alias Chexx.Square
+
   # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
 
@@ -15,7 +17,7 @@ defmodule Chexx do
     piece == :knight or
     piece == :pawn
 
-  defguard is_file(file) when file in [:a, :b, :c, :d, :e, :f, :g, :h]
+  defguard is_file(file) when file in 1..8 or file in [:a, :b, :c, :d, :e, :f, :g, :h]
   defguard is_rank(rank) when rank in 1..8
 
   def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
@@ -26,6 +28,8 @@ defmodule Chexx do
   end
 
   def put_piece(board, type, color, square) when is_piece(type) and is_color(color) do
+    square = Square.new(square)
+
     if piece = piece_at(board, square) do
       raise "Square #{inspect(square)} square already has piece #{inspect(piece)}."
     end
@@ -59,7 +63,7 @@ defmodule Chexx do
   def piece_at(board, square) do
     board.pieces
     |> Enum.find(fn piece ->
-      piece.square == square
+      piece.square == Square.new(square)
     end)
     |> case do
       nil -> nil
@@ -127,7 +131,7 @@ defmodule Chexx do
     %{
       piece_type: moved_piece,
       source: source,
-      destination: {dest_file, dest_rank},
+      destination: Square.new(dest_file, dest_rank),
       capture: capture_type
     }
   end
@@ -358,90 +362,6 @@ defmodule Chexx do
     |> put_piece(piece.type, piece.color, dest)
   end
 
-  def move_direction(square, direction, distance \\ 1) do
-    case direction do
-      :up -> up(square, distance)
-      :up_right -> up_right(square, distance)
-      :right -> right(square, distance)
-      :down_right -> down_right(square, distance)
-      :down -> down(square, distance)
-      :down_left -> down_left(square, distance)
-      :left -> left(square, distance)
-      :up_left -> up_left(square, distance)
-    end
-  end
-
-  def up({file, rank}, squares \\ 1) do
-    {file, rank + squares}
-  end
-
-  def up_right(start, distance \\ 1) do
-    start
-    |> up(distance)
-    |> right(distance)
-  end
-
-  def right({file, rank}, squares \\ 1) do
-    new_file = number_to_file(file_to_number(file) + squares)
-    {new_file, rank}
-  end
-
-  def down_right(start, distance \\ 1) do
-    start
-    |> down(distance)
-    |> right(distance)
-  end
-
-  def down({file, rank}, squares \\ 1) do
-    {file, rank - squares}
-  end
-
-  def down_left(start, distance \\ 1) do
-    start
-    |> down(distance)
-    |> left(distance)
-  end
-
-  def left({file, rank}, squares \\ 1) do
-    new_file = number_to_file(file_to_number(file) - squares)
-    {new_file, rank}
-  end
-
-  def up_left(start, distance \\ 1) do
-    start
-    |> up(distance)
-    |> left(distance)
-  end
-
-  def file_to_number(:a), do: 1
-  def file_to_number(:b), do: 2
-  def file_to_number(:c), do: 3
-  def file_to_number(:d), do: 4
-  def file_to_number(:e), do: 5
-  def file_to_number(:f), do: 6
-  def file_to_number(:g), do: 7
-  def file_to_number(:h), do: 8
-
-  def file_to_number(1), do: 1
-  def file_to_number(2), do: 2
-  def file_to_number(3), do: 3
-  def file_to_number(4), do: 4
-  def file_to_number(5), do: 5
-  def file_to_number(6), do: 6
-  def file_to_number(7), do: 7
-  def file_to_number(8), do: 8
-
-  def number_to_file(1), do: :a
-  def number_to_file(2), do: :b
-  def number_to_file(3), do: :c
-  def number_to_file(4), do: :d
-  def number_to_file(5), do: :e
-  def number_to_file(6), do: :f
-  def number_to_file(7), do: :g
-  def number_to_file(8), do: :h
-
-  require Logger
-
   defp possible_pawn_sources(by, move) do
     %{
       source: source,
@@ -453,26 +373,24 @@ defmodule Chexx do
 
     source_file =
       if is_nil(source) do
-        elem(destination, 0)
+        Square.file(destination)
       else
-        elem(source, 0)
+        Square.file(source)
       end
-
-    Logger.info("Capture type is #{capture_type}")
 
     is_capture? = capture_type == :required or destination_file != source_file
 
     if is_capture? do
       {_source_file, source_rank} = source =
         case by do
-          :white -> down({source_file, destination_rank}, 1)
-          :black -> up({source_file, destination_rank}, 1)
+          :white -> Square.down({source_file, destination_rank}, 1)
+          :black -> Square.up({source_file, destination_rank}, 1)
         end
 
-      {en_passant_captured_file, en_passant_captured_rank} = en_passant_captured_square =
+      en_passant_captured_square =
         case by do
-          :white -> down(destination)
-          :black -> up(destination)
+          :white -> Square.down(destination)
+          :black -> Square.up(destination)
         end
 
       # Most recent move was to current pos
@@ -480,18 +398,18 @@ defmodule Chexx do
 
       required_history_fn = fn history ->
         captured_pawn_last_moved_to_this_square? =
-          Enum.at(history, 0) == "#{to_string(en_passant_captured_file)}#{to_string(en_passant_captured_rank)}"
+          Enum.at(history, 0) == Square.to_algebraic(en_passant_captured_square)
 
         # captured pawn's previous move was two squares
         captured_pawn_didnt_move_previously? =
           Enum.take_every(history, 2)
           |> Enum.all?(fn move ->
-            {forbidden_file, forbidden_rank} =
+            forbidden_square =
               case by do
-                :white -> down(en_passant_captured_square)
-                :black -> up(en_passant_captured_square)
+                :white -> Square.down(en_passant_captured_square)
+                :black -> Square.up(en_passant_captured_square)
               end
-            move != "#{to_string(forbidden_file)}#{to_string(forbidden_rank)}"
+            move != Square.to_algebraic(forbidden_square)
           end)
 
         captured_pawn_last_moved_to_this_square? and
@@ -536,7 +454,7 @@ defmodule Chexx do
         [regular_move]
       end
     else
-      {_file, rank} = destination
+      rank = Square.rank(destination)
 
       can_move_two? =
         case {by, rank} do
@@ -548,8 +466,8 @@ defmodule Chexx do
 
       move_one_source =
         case by do
-          :white -> down(destination, 1)
-          :black -> up(destination, 1)
+          :white -> Square.down(destination, 1)
+          :black -> Square.up(destination, 1)
         end
 
       move_one =  %{
@@ -565,8 +483,8 @@ defmodule Chexx do
 
       move_two_source =
         case by do
-          :white -> down(destination, 2)
-          :black -> up(destination, 2)
+          :white -> Square.down(destination, 2)
+          :black -> Square.up(destination, 2)
         end
 
       move_two = %{
@@ -578,7 +496,7 @@ defmodule Chexx do
             destination: destination
           }
         ],
-        traverses: squares_between(move_two_source, destination)
+        traverses: Square.squares_between(move_two_source, destination)
       }
 
       cond do
@@ -589,17 +507,11 @@ defmodule Chexx do
   end
 
   defp possible_king_sources(player, destination) do
-    {file, rank} = destination
-    file_int = file_to_number(file)
-
-    for x <- [-1, 0, 1], y <- [-1, 0, 1] do
-      {file_int + x, rank + y}
+    for distance <- [1], direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
+      Square.move_direction(destination, direction, distance)
     end
-    |> Enum.filter(fn {source_file, source_rank} ->
-      source_rank in 1..8 and source_file in 1..8
-    end)
-    |> Enum.map(fn {source_file, source_rank} ->
-      {number_to_file(source_file), source_rank}
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
       %{
@@ -616,67 +528,19 @@ defmodule Chexx do
   end
 
   defp possible_rook_sources(player, destination) do
-    {file, rank} = destination
-    file_int = file_to_number(file)
-
     for distance <- 1..7, direction <- [:up, :left, :down, :right] do
-      case direction do
-        :up -> {file_int, rank + distance}
-        :left -> {file_int - distance, rank}
-        :down -> {file_int, rank - distance}
-        :right -> {file_int + distance, rank}
-      end
+      Square.move_direction(destination, direction, distance)
     end
-    |> Enum.filter(fn {source_file, source_rank} ->
-      source_rank in 1..8 and source_file in 1..8
-    end)
-    |> Enum.map(fn {source_file, source_rank} ->
-      {number_to_file(source_file), source_rank}
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
       %{
         movements: [%{piece_type: :rook, piece_color: player, source: source, destination: destination}],
-        traverses: squares_between(source, destination),
+        traverses: Square.squares_between(source, destination),
         capture: :allowed,
         captures: destination
       }
     end)
-  end
-
-  defp squares_between({src_file, src_rank}, {dest_file, dest_rank}) do
-    cond do
-      src_file == dest_file ->
-        for rank <- ranks_between(src_rank, dest_rank) do
-          {src_file, rank}
-        end
-      src_rank == dest_rank ->
-        for file <- files_between(src_file, dest_file) do
-          {file, src_rank}
-        end
-    end
-  end
-
-  defp ranks_between(src_rank, dest_rank) do
-    range_between(src_rank, dest_rank)
-  end
-
-  defp files_between(src_file, dest_file) do
-    src_file = file_to_number(src_file)
-    dest_file = file_to_number(dest_file)
-
-    range_between(src_file, dest_file)
-    |> Enum.map(&number_to_file/1)
-  end
-
-  defp range_between(first, last) do
-    min_val = min(first, last)
-    max_val = max(first, last)
-    if max_val - min_val == 1 do
-      []
-    else
-      range_start = min_val + 1
-      range_end = max_val - 1
-      range_start..range_end
-    end
   end
 end
