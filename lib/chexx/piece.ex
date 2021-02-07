@@ -7,7 +7,16 @@ defmodule Chexx.Piece do
     is_piece: 1
   ]
 
+  @enforce_keys [
+    :type,
+    :color
+  ]
+  defstruct [
+    :type,
+    :color
+  ]
+
   def new(type, color) when is_piece(type) and is_color(color) do
-    %{type: type, color: color}
+    %__MODULE__{type: type, color: color}
   end
 end

@@ -14,8 +14,12 @@ defmodule Chexx.Board do
     is_valid_square: 1
   ]
 
+  defstruct [
+    pieces: []
+  ]
+
   def new do
-    %{pieces: []}
+    %__MODULE__{}
   end
 
   def put_piece(board, type, color, square) when is_piece(type) and is_color(color) do

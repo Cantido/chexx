@@ -4,8 +4,19 @@ defmodule Chexx.Touch do
   Encodes a start square and end square.
   """
 
+  @enforce_keys [
+    :source,
+    :destination,
+    :piece
+  ]
+  defstruct [
+    :source,
+    :destination,
+    :piece
+  ]
+
   def new(source, destination, piece) do
-    %{
+    %__MODULE__{
       source: source,
       destination: destination,
       piece: piece
@@ -13,10 +24,11 @@ defmodule Chexx.Touch do
   end
 
   def new(map) when is_map(map) do
-    Map.take(map, [
+    params = Map.take(map, [
       :source,
       :destination,
       :piece
     ])
+    struct(__MODULE__, params)
   end
 end
