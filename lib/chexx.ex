@@ -11,9 +11,12 @@ defmodule Chexx do
   alias Chexx.Move
   alias Chexx.Touch
 
+  import Chexx.Color
+
   defstruct [
     history: [],
-    board: Board.new()
+    current_player: :white,
+    board: Board.new(),
   ]
 
   # TODO: validate when the check or checkmate symbol appears
@@ -62,6 +65,10 @@ defmodule Chexx do
     %__MODULE__{board: board}
   end
 
+  def new(%Board{} = board, color) when is_color(color) do
+    %__MODULE__{board: board, current_player: color}
+  end
+
   def piece_at(game, square) do
     Board.piece_at(game.board, Square.new(square))
   end
@@ -76,17 +83,18 @@ defmodule Chexx do
     end)
   end
 
-  def move(game, by, notation) do
+  def move(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
     move =
-      possible_moves(parsed_notation, by)
-      |> disambiguate_moves(game, by, parsed_notation)
+      possible_moves(parsed_notation, game.current_player)
+      |> disambiguate_moves(game, game.current_player, parsed_notation)
 
     board = Board.move(game.board, move)
+    opponent = Color.opponent(game.current_player)
 
     game = put_move(game, notation)
 
-    %{game | board: board}
+    %{game | board: board, current_player: opponent}
   end
 
   defp possible_moves(notation, player) do
