@@ -2,7 +2,13 @@ defmodule Chexx.Move do
   @moduledoc """
   Encapsulates a change in `Chexx.Piece`'s position on a `Chexx.Board`,
   along with certain requirements of the move.
+
+  A Move is usually built from a single `Chexx.Touch`, but some moves require multiple touches,
+  like castling.
   """
+
+  alias Chexx.Touch
+  alias Chexx.Square
 
   @enforce_keys [
     :movements
@@ -29,4 +35,20 @@ defmodule Chexx.Move do
   end
 
   def default_match_history_fn(_), do: true
+
+  def single_touch(piece, source, destination, opts \\ []) do
+    traverses =
+      if Keyword.get(opts, :traverses, true) do
+        Square.squares_between(source, destination)
+      else
+        []
+      end
+
+    %__MODULE__{
+      movements: [Touch.new(source, destination, piece)],
+      capture: :allowed,
+      captures: destination,
+      traverses: traverses
+    }
+  end
 end

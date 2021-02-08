@@ -350,11 +350,7 @@ defmodule Chexx do
         end
 
       move_one =
-        Move.new(%{
-          movements: [
-            Touch.new(move_one_source, destination, Piece.new(:pawn, by))
-          ]
-        })
+        Move.single_touch(Piece.new(:pawn, by), move_one_source, destination)
 
       move_two_source =
         case by do
@@ -363,12 +359,7 @@ defmodule Chexx do
         end
 
       move_two =
-        Move.new(%{
-          movements: [
-            Touch.new(move_two_source, destination, Piece.new(:pawn, by))
-          ],
-          traverses: Square.squares_between(move_two_source, destination)
-        })
+        Move.single_touch(Piece.new(:pawn, by), move_two_source, destination)
 
       cond do
         can_move_two? -> [move_one, move_two]
@@ -385,11 +376,7 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      Move.new(%{
-        movements: [Touch.new(source, destination, Piece.new(:king, player))],
-        capture: :allowed,
-        captures: destination
-      })
+      Move.single_touch(Piece.new(:king, player), source, destination)
     end)
   end
 
@@ -401,12 +388,7 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      Move.new(%{
-        movements: [Touch.new(source, destination, Piece.new(:queen, player))],
-        traverses: Square.squares_between(source, destination),
-        capture: :allowed,
-        captures: destination
-      })
+      Move.single_touch(Piece.new(:queen, player), source, destination)
     end)
   end
 
@@ -418,12 +400,7 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      Move.new(%{
-        movements: [Touch.new(source, destination, Piece.new(:rook, player))],
-        traverses: Square.squares_between(source, destination),
-        capture: :allowed,
-        captures: destination
-      })
+      Move.single_touch(Piece.new(:rook, player), source, destination)
     end)
   end
 
@@ -435,12 +412,7 @@ defmodule Chexx do
       Square.within?(square, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      Move.new(%{
-        movements: [Touch.new(source, destination, Piece.new(:bishop, player))],
-        traverses: Square.squares_between(source, destination),
-        capture: :allowed,
-        captures: destination
-      })
+      Move.single_touch(Piece.new(:bishop, player), source, destination)
     end)
   end
 
@@ -459,11 +431,7 @@ defmodule Chexx do
       Square.within?(source, 1..8, 1..8)
     end)
     |> Enum.map(fn source ->
-      Move.new(%{
-        movements: [Touch.new(source, destination, Piece.new(:knight, player))],
-        capture: :allowed,
-        captures: destination
-      })
+      Move.single_touch(Piece.new(:knight, player), source, destination, traverses: false)
     end)
   end
 end
