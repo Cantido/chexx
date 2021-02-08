@@ -36,6 +36,10 @@ defmodule Chexx do
     Board.piece_at(game.board, Square.new(square))
   end
 
+  def piece_at(game, file, rank) do
+    Board.piece_at(game.board, Square.new(file, rank))
+  end
+
   defp put_move(game, move) do
     Map.update!(game, :history, fn history ->
       [move | history]

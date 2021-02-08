@@ -624,6 +624,27 @@ defmodule ChexxTest do
         assert piece_at_dest.type == :queen
       end
     end
+
+    test "can't traverse through pieces" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:queen, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        |> Chexx.move(:white, "Qc3")
+      end
+    end
+
+    test "can capture" do
+      piece_at_dest =
+        Chexx.new()
+        |> Chexx.put_piece(:queen, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :black, {:b, 2})
+        |> Chexx.move(:white, "Qxb2")
+        |> Chexx.piece_at(:b, 2)
+
+      assert piece_at_dest.color == :white
+      assert piece_at_dest.type == :queen
+    end
   end
 
   describe "bishop moves" do
@@ -646,6 +667,27 @@ defmodule ChexxTest do
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :bishop
       end
+    end
+
+    test "can't traverse through pieces" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:bishop, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        |> Chexx.move(:white, "Bc3")
+      end
+    end
+
+    test "can capture" do
+      piece_at_dest =
+        Chexx.new()
+        |> Chexx.put_piece(:bishop, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :black, {:b, 2})
+        |> Chexx.move(:white, "Bxb2")
+        |> Chexx.piece_at(:b, 2)
+
+      assert piece_at_dest.color == :white
+      assert piece_at_dest.type == :bishop
     end
   end
 
@@ -678,6 +720,32 @@ defmodule ChexxTest do
         assert piece_at_dest.color == color
         assert piece_at_dest.type == :knight
       end
+    end
+
+    test "can traverse through pieces" do
+      piece_at_dest =
+        Chexx.new()
+        |> Chexx.put_piece(:knight, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :white, {:a, 2})
+        |> Chexx.put_piece(:pawn, :white, {:a, 3})
+        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        |> Chexx.move(:white, "Nb3")
+        |> Chexx.piece_at(:b, 3)
+
+      assert piece_at_dest.color == :white
+      assert piece_at_dest.type == :knight
+    end
+
+    test "can capture" do
+      piece_at_dest =
+        Chexx.new()
+        |> Chexx.put_piece(:knight, :white, {:a, 1})
+        |> Chexx.put_piece(:pawn, :black, {:b, 3})
+        |> Chexx.move(:white, "Nxb3")
+        |> Chexx.piece_at(:b, 3)
+
+      assert piece_at_dest.color == :white
+      assert piece_at_dest.type == :knight
     end
   end
 end
