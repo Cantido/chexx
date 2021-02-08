@@ -64,6 +64,7 @@ defmodule Chexx do
           :king -> possible_king_sources(player, regular_move.destination)
           :queen -> possible_queen_sources(player, regular_move.destination)
           :rook -> possible_rook_sources(player, regular_move.destination)
+          :bishop -> possible_bishop_sources(player, regular_move.destination)
         end
     end
   end
@@ -104,7 +105,7 @@ defmodule Chexx do
 
     possible_moves_count = Enum.count(moves)
     if possible_moves_count > 1 do
-      raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves."
+      raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves: #{inspect moves}"
     end
 
     Enum.at(moves, 0)
@@ -414,6 +415,23 @@ defmodule Chexx do
     |> Enum.map(fn source ->
       Move.new(%{
         movements: [Touch.new(source, destination, Piece.new(:rook, player))],
+        traverses: Square.squares_between(source, destination),
+        capture: :allowed,
+        captures: destination
+      })
+    end)
+  end
+
+  defp possible_bishop_sources(player, destination) do
+    for distance <- 1..7, direction <- [:up_right, :down_right, :down_left, :up_left] do
+      Square.move_direction(destination, direction, distance)
+    end
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
+    end)
+    |> Enum.map(fn source ->
+      Move.new(%{
+        movements: [Touch.new(source, destination, Piece.new(:bishop, player))],
         traverses: Square.squares_between(source, destination),
         capture: :allowed,
         captures: destination

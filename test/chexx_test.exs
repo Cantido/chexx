@@ -625,4 +625,27 @@ defmodule ChexxTest do
       end
     end
   end
+
+  describe "bishop moves" do
+    property "can move diagonally, any distance" do
+      check all color <- color(),
+                start <- square(),
+                direction <- member_of([:up_right, :down_right, :down_left, :up_left]),
+                max_distance = max_distance(start, direction),
+                max_distance > 0,
+                distance <- integer(1..max_distance) do
+
+        destination = Square.move_direction(start, direction, distance)
+
+        piece_at_dest =
+          Chexx.new()
+          |> Chexx.put_piece(:bishop, color, start)
+          |> Chexx.move(color, "B#{Square.to_algebraic(destination)}")
+          |> Chexx.piece_at(destination)
+
+        assert piece_at_dest.color == color
+        assert piece_at_dest.type == :bishop
+      end
+    end
+  end
 end
