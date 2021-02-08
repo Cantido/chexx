@@ -285,7 +285,8 @@ defmodule ChexxTest do
 
     test "can't move if there are no pieces that can be moved" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
+        Board.new()
+        |> Chexx.new()
         |> Chexx.move(:black, "e5")
       end
     end

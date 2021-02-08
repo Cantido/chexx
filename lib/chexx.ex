@@ -11,8 +11,6 @@ defmodule Chexx do
   alias Chexx.Move
   alias Chexx.Touch
 
-  import Chexx.Square, only: [is_file: 1]
-
   defstruct [
     history: [],
     board: Board.new()
@@ -22,15 +20,46 @@ defmodule Chexx do
   # TODO: don't let a piece move to its own position, i.e. not actually move
 
   def new do
-    %__MODULE__{}
+    Board.new()
+    |> Board.put_piece(:pawn, :white, :a, 2)
+    |> Board.put_piece(:pawn, :white, :b, 2)
+    |> Board.put_piece(:pawn, :white, :c, 2)
+    |> Board.put_piece(:pawn, :white, :d, 2)
+    |> Board.put_piece(:pawn, :white, :e, 2)
+    |> Board.put_piece(:pawn, :white, :f, 2)
+    |> Board.put_piece(:pawn, :white, :g, 2)
+    |> Board.put_piece(:pawn, :white, :h, 2)
+
+    |> Board.put_piece(:rook, :white, :a, 1)
+    |> Board.put_piece(:knight, :white, :b, 1)
+    |> Board.put_piece(:bishop, :white, :c, 1)
+    |> Board.put_piece(:queen, :white, :d, 1)
+    |> Board.put_piece(:king, :white, :e, 1)
+    |> Board.put_piece(:bishop, :white, :f, 1)
+    |> Board.put_piece(:knight, :white, :g, 1)
+    |> Board.put_piece(:rook, :white, :h, 1)
+
+    |> Board.put_piece(:pawn, :black, :b, 7)
+    |> Board.put_piece(:pawn, :black, :c, 7)
+    |> Board.put_piece(:pawn, :black, :d, 7)
+    |> Board.put_piece(:pawn, :black, :e, 7)
+    |> Board.put_piece(:pawn, :black, :f, 7)
+    |> Board.put_piece(:pawn, :black, :g, 7)
+    |> Board.put_piece(:pawn, :black, :h, 7)
+
+    |> Board.put_piece(:rook, :black, :a, 8)
+    |> Board.put_piece(:knight, :black, :b, 8)
+    |> Board.put_piece(:bishop, :black, :c, 8)
+    |> Board.put_piece(:queen, :black, :d, 8)
+    |> Board.put_piece(:king, :black, :e, 8)
+    |> Board.put_piece(:bishop, :black, :f, 8)
+    |> Board.put_piece(:knight, :black, :g, 8)
+    |> Board.put_piece(:rook, :black, :h, 8)
+    |> new()
   end
 
   def new(%Board{} = board) do
     %__MODULE__{board: board}
-  end
-
-  def put_piece(game, type, color, square) do
-    %__MODULE__{game | board: Board.put_piece(game.board, type, color, Square.new(square))}
   end
 
   def piece_at(game, square) do
