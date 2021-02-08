@@ -146,10 +146,10 @@ defmodule Chexx.Square do
             y <- 0..vert_distance,
             x != 0,
             y != 0,
-            x != src_file,
-            y != src_rank,
+            x != horiz_distance,
+            y != vert_distance,
             abs(x) == abs(y) do
-          new(x, y)
+          new(src_file + x, src_rank + y)
         end
     end
   end
