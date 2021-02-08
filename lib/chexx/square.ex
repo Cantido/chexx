@@ -128,7 +128,7 @@ defmodule Chexx.Square do
   defp number_to_file(7), do: :g
   defp number_to_file(8), do: :h
 
-  def squares_between(%__MODULE__{file: src_file, rank: src_rank}, %__MODULE__{file: dest_file, rank: dest_rank}) do
+  def squares_between(%__MODULE__{file: src_file, rank: src_rank} = src, %__MODULE__{file: dest_file, rank: dest_rank} = dest) do
     cond do
       src_file == dest_file ->
         for rank <- ranks_between(src_rank, dest_rank) do
@@ -138,7 +138,22 @@ defmodule Chexx.Square do
         for file <- files_between(src_file, dest_file) do
           new(file, src_rank)
         end
+      diagonal_of?(src, dest) ->
+        horiz_distance = dest_file - src_file
+        vert_distance = dest_rank - src_rank
+
+        for x <- 0..horiz_distance,
+            y <- 0..vert_distance,
+            x != 0,
+            y != 0,
+            abs(x) == abs(y) do
+          new(x, y)
+        end
     end
+  end
+
+  defp diagonal_of?(%__MODULE__{file: src_file, rank: src_rank}, %__MODULE__{file: dest_file, rank: dest_rank}) do
+    abs(src_file - dest_file) == abs(src_rank - dest_rank)
   end
 
   defp ranks_between(src_rank, dest_rank) do

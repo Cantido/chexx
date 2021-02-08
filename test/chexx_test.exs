@@ -327,9 +327,13 @@ defmodule ChexxTest do
     {start_file, start_rank} = Square.coords(square)
     case direction do
       :up -> 8 - start_rank
+      :up_right -> min(max_distance(square, :up), max_distance(square, :right))
       :right -> 8 - start_file
+      :down_right -> min(max_distance(square, :down), max_distance(square, :right))
       :down -> start_rank - 1
+      :down_left -> min(max_distance(square, :down), max_distance(square, :left))
       :left -> start_file - 1
+      :up_left -> min(max_distance(square, :up), max_distance(square, :left))
     end
   end
 
@@ -596,6 +600,29 @@ defmodule ChexxTest do
       actual_rook = Chexx.piece_at(board, {:d, 8})
       assert actual_rook.type == :rook
       assert actual_rook.color == :black
+    end
+  end
+
+  describe "queen moves" do
+    property "can move any direction, any distance" do
+      check all color <- color(),
+                start <- square(),
+                direction <- direction(),
+                max_distance = max_distance(start, direction),
+                max_distance > 0,
+                distance <- integer(1..max_distance) do
+
+        destination = Square.move_direction(start, direction, distance)
+
+        piece_at_dest =
+          Chexx.new()
+          |> Chexx.put_piece(:queen, color, start)
+          |> Chexx.move(color, "Q#{Square.to_algebraic(destination)}")
+          |> Chexx.piece_at(destination)
+
+        assert piece_at_dest.color == color
+        assert piece_at_dest.type == :queen
+      end
     end
   end
 end

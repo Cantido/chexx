@@ -62,6 +62,7 @@ defmodule Chexx do
         case regular_move.piece_type do
           :pawn -> possible_pawn_sources(player, regular_move)
           :king -> possible_king_sources(player, regular_move.destination)
+          :queen -> possible_queen_sources(player, regular_move.destination)
           :rook -> possible_rook_sources(player, regular_move.destination)
         end
     end
@@ -380,6 +381,23 @@ defmodule Chexx do
     |> Enum.map(fn source ->
       Move.new(%{
         movements: [Touch.new(source, destination, Piece.new(:king, player))],
+        capture: :allowed,
+        captures: destination
+      })
+    end)
+  end
+
+  defp possible_queen_sources(player, destination) do
+    for distance <- 1..7, direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
+      Square.move_direction(destination, direction, distance)
+    end
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
+    end)
+    |> Enum.map(fn source ->
+      Move.new(%{
+        movements: [Touch.new(source, destination, Piece.new(:queen, player))],
+        traverses: Square.squares_between(source, destination),
         capture: :allowed,
         captures: destination
       })
