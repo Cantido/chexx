@@ -42,6 +42,7 @@ defmodule Chexx do
     |> Board.put_piece(:knight, :white, :g, 1)
     |> Board.put_piece(:rook, :white, :h, 1)
 
+    |> Board.put_piece(:pawn, :black, :a, 7)
     |> Board.put_piece(:pawn, :black, :b, 7)
     |> Board.put_piece(:pawn, :black, :c, 7)
     |> Board.put_piece(:pawn, :black, :d, 7)

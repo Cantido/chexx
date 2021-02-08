@@ -854,7 +854,8 @@ defmodule ChexxTest do
       "e3", "c5",
       "c4", "Nc6",
       "Nc3", "Nf6",
-      "dxc5", "Bxc5"
+      "dxc5", "Bxc5",
+      "a3", "a6"
     ])
   end
 end
