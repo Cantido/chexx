@@ -44,9 +44,11 @@ defmodule Chexx.Move do
         []
       end
 
+    capture = Keyword.get(opts, :capture, :allowed)
+
     %__MODULE__{
       movements: [Touch.new(source, destination, piece)],
-      capture: :allowed,
+      capture: capture,
       captures: destination,
       traverses: traverses
     }

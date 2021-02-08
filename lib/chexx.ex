@@ -83,6 +83,18 @@ defmodule Chexx do
     end)
   end
 
+  def turn(game, move1, move2) do
+    game
+    |> move(move1)
+    |> move(move2)
+  end
+
+  def moves(game, moves) when is_list(moves) do
+    Enum.reduce(moves, game, fn move, game ->
+      move(game, move)
+    end)
+  end
+
   def move(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
     move =
@@ -402,7 +414,7 @@ defmodule Chexx do
       end
 
     move_one =
-      Move.single_touch(Piece.new(:pawn, player), move_one_source, destination)
+      Move.single_touch(Piece.new(:pawn, player), move_one_source, destination, capture: :forbidden)
 
     move_two_source =
       case player do
@@ -411,7 +423,7 @@ defmodule Chexx do
       end
 
     move_two =
-      Move.single_touch(Piece.new(:pawn, player), move_two_source, destination)
+      Move.single_touch(Piece.new(:pawn, player), move_two_source, destination, capture: :forbidden)
 
     cond do
       can_move_two? -> [move_one, move_two]

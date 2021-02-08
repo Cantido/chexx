@@ -845,4 +845,16 @@ defmodule ChexxTest do
       |> Chexx.move("c5")
     end
   end
+
+  test "Georg Rotlewi vs Akiba Rubinstein" do
+    Chexx.new()
+    |> Chexx.moves([
+      "d4", "d5",
+      "Nf3", "e6",
+      "e3", "c5",
+      "c4", "Nc6",
+      "Nc3", "Nf6",
+      "dxc5", "Bxc5"
+    ])
+  end
 end
