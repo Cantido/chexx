@@ -648,4 +648,36 @@ defmodule ChexxTest do
       end
     end
   end
+
+  defp knight_moves_from(square) do
+    [
+      square |> Square.up(2) |> Square.right(),
+      square |> Square.up(2) |> Square.left(),
+      square |> Square.right(2) |> Square.up(),
+      square |> Square.right(2) |> Square.down(),
+      square |> Square.down(2) |> Square.right(),
+      square |> Square.down(2) |> Square.left(),
+      square |> Square.left(2) |> Square.up(),
+      square |> Square.left(2) |> Square.down()
+    ]
+  end
+
+  describe "knight moves" do
+    property "can move any direction in the weird way knights do" do
+      check all color <- color(),
+                start <- square(),
+                destination <- member_of(knight_moves_from(start)),
+                Square.within?(destination, 1..8, 1..8) do
+
+        piece_at_dest =
+          Chexx.new()
+          |> Chexx.put_piece(:knight, color, start)
+          |> Chexx.move(color, "N#{Square.to_algebraic(destination)}")
+          |> Chexx.piece_at(destination)
+
+        assert piece_at_dest.color == color
+        assert piece_at_dest.type == :knight
+      end
+    end
+  end
 end

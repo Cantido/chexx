@@ -177,4 +177,10 @@ defmodule Chexx.Square do
       range_start..range_end
     end
   end
+
+  defimpl Inspect, for: __MODULE__ do
+    def inspect(square, _opts) do
+      Chexx.Square.to_algebraic(square)
+    end
+  end
 end
