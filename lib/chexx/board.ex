@@ -9,6 +9,7 @@ defmodule Chexx.Board do
   alias Chexx.Piece
   alias Chexx.Move
   alias Chexx.Touch
+  alias Chexx.Color
 
   import Chexx.Color
   import Chexx.Piece, only: [is_piece: 1]
@@ -64,7 +65,44 @@ defmodule Chexx.Board do
     end
   end
 
-  def move(%__MODULE__{} = board, _by, %Move{} = move) do
+  def find_pieces(%__MODULE__{} = board, piece) do
+    board.occupied_positions
+    |> Enum.filter(fn occ_pos ->
+      occ_pos.piece == piece
+    end)
+    |> Enum.map(fn occ_pos ->
+      occ_pos.square
+    end)
+  end
+
+  def valid_move?(%__MODULE__{} = board, by, %Move{} = move) do
+    all_touches_present? =
+      Enum.all?(move.movements, fn %{source: src, piece: expected_piece} ->
+        actual_piece = piece_at(board, src)
+
+        expected_piece.color == by and expected_piece == actual_piece
+      end)
+
+    path_clear? =
+      Enum.all?(Map.get(move, :traverses, []), fn traversed_square ->
+        is_nil(piece_at(board, traversed_square))
+      end)
+
+    capture = Map.get(move, :capture, :forbidden)
+    captured_square = Map.get(move, :captures)
+    captured_piece = piece_at(board, captured_square)
+
+    capture_valid? =
+      case capture do
+        :required -> not is_nil(captured_piece) and captured_piece.color == Color.opponent(by)
+        :allowed -> is_nil(captured_piece) or captured_piece.color == Color.opponent(by)
+        _ -> is_nil(captured_piece)
+      end
+
+    all_touches_present? and path_clear? and capture_valid?
+  end
+
+  def move(%__MODULE__{} = board, %Move{} = move) do
     captured_square = Map.get(move, :captures)
 
     board = delete_piece(board, captured_square)

@@ -748,4 +748,13 @@ defmodule ChexxTest do
       assert piece_at_dest.type == :knight
     end
   end
+
+  test "can't put your king into check" do
+    assert_raise RuntimeError, fn ->
+      Chexx.new()
+      |> Chexx.put_piece(:king, :white, {:a, 1})
+      |> Chexx.put_piece(:rook, :black, {:b, 2})
+      |> Chexx.move(:white, "Kb1")
+    end
+  end
 end

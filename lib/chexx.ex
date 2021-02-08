@@ -4,6 +4,7 @@ defmodule Chexx do
   """
 
   alias Chexx.AlgebraicNotation
+  alias Chexx.Color
   alias Chexx.Square
   alias Chexx.Board
   alias Chexx.Piece
@@ -51,7 +52,7 @@ defmodule Chexx do
       possible_moves(notation, by)
       |> disambiguate_moves(game, by)
 
-    board = Board.move(game.board, by, move)
+    board = Board.move(game.board, move)
 
     game = put_move(game, notation)
 
@@ -64,7 +65,7 @@ defmodule Chexx do
       :queenside_castle -> queenside_castle(player)
       regular_move ->
         case regular_move.piece_type do
-          :pawn -> possible_pawn_sources(player, regular_move)
+          :pawn -> possible_pawn_sources(player, regular_move.destination)
           :king -> possible_king_sources(player, regular_move.destination)
           :queen -> possible_queen_sources(player, regular_move.destination)
           :rook -> possible_rook_sources(player, regular_move.destination)
@@ -77,31 +78,15 @@ defmodule Chexx do
   defp disambiguate_moves(moves, game, by) do
     moves =
       moves
-      |> Enum.filter(fn possible_move ->
-        Enum.all?(possible_move.movements, fn %{source: src, piece: expected_piece} ->
-          actual_piece = Board.piece_at(game.board, src)
-
-          expected_piece.color == by and expected_piece == actual_piece
-        end)
-      end)
-      |> Enum.reject(fn possible_move ->
-        Map.get(possible_move, :traverses, [])
-        |> Enum.any?(fn traversed_square ->
-          Board.piece_at(game.board, traversed_square)
-        end)
-      end)
-      |> Enum.reject(fn possible_move ->
-        capture = Map.get(possible_move, :capture, :forbidden)
-        captured_square = Map.get(possible_move, :captures)
-        captured_piece = Board.piece_at(game.board, captured_square)
-
-        capture == :required and
-          (is_nil(captured_piece) or captured_piece.color == by)
-      end)
+      |> Enum.filter(&Board.valid_move?(game.board, by, &1))
       |> Enum.filter(fn possible_move ->
         match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
 
         match_history_fn.(game.history)
+      end)
+      |> Enum.reject(fn possible_move ->
+        board = Board.move(game.board, possible_move)
+        king_in_check?(%{game | board: board}, by)
       end)
 
     if Enum.empty?(moves) do
@@ -116,6 +101,33 @@ defmodule Chexx do
     Enum.at(moves, 0)
   end
 
+  defp king_in_check?(game, player_in_check) do
+    opponent = Color.opponent(player_in_check)
+    king = Piece.new(:king, player_in_check)
+    king_squares = Board.find_pieces(game.board, king)
+
+    possible_king_captures =
+      Enum.flat_map(king_squares, fn king_square ->
+        possible_pawn_sources(opponent, king_square) ++
+        possible_king_sources(opponent, king_square) ++
+        possible_queen_sources(opponent, king_square) ++
+        possible_rook_sources(opponent, king_square) ++
+        possible_bishop_sources(opponent, king_square) ++
+        possible_knight_sources(opponent, king_square)
+      end)
+      |> Enum.filter(&Board.valid_move?(game.board, opponent, &1))
+      |> Enum.filter(fn possible_move ->
+        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+
+        match_history_fn.(game.history)
+      end)
+      |> Enum.filter(fn possible_move ->
+        is_nil(possible_move.captured_piece_type) or
+         possible_move.captured_piece_type == :king
+      end)
+
+    Enum.count(possible_king_captures) > 0
+  end
 
   defp kingside_castle(by) do
     match_history_fn = fn history ->
@@ -249,122 +261,109 @@ defmodule Chexx do
     not is_nil(piece) and piece.color == color and piece.type == type
   end
 
-  defp possible_pawn_sources(by, move) do
-    %{
-      source: source,
-      destination: destination,
-      capture: capture_type
-      } = move
+  defp possible_pawn_sources(by, destination) do
+    possible_pawn_captures(by, destination) ++ possible_pawn_advances(by, destination)
+  end
 
-    {destination_file, destination_rank} = Square.coords(destination)
-
-    source_file =
-      cond do
-        is_nil(source) -> Square.file(destination)
-        is_file(source) -> source
-        true -> Square.file(source)
+  defp possible_pawn_captures(player, destination) do
+    ep_captured_square =
+      case player do
+        :white -> Square.down(destination)
+        :black -> Square.up(destination)
       end
 
-    is_capture? = capture_type == :required or destination_file != source_file
+    sources =
+      [Square.left(ep_captured_square), Square.right(ep_captured_square)]
 
-    if is_capture? do
-      source =
-        case by do
-          :white -> Square.new(source_file, destination_rank) |> Square.down(1)
-          :black -> Square.new(source_file, destination_rank) |> Square.up(1)
-        end
+    # Most recent move was to current pos
+    required_history_fn = fn history ->
+      captured_pawn_last_moved_to_this_square? =
+        Enum.at(history, 0) == Square.to_algebraic(ep_captured_square)
 
-      en_passant_captured_square =
-        case by do
-          :white -> Square.down(destination)
-          :black -> Square.up(destination)
-        end
+      # captured pawn's previous move was two squares
+      captured_pawn_didnt_move_previously? =
+        Enum.take_every(history, 2)
+        |> Enum.all?(fn move ->
+          forbidden_square =
+            case player do
+              :white -> Square.down(ep_captured_square)
+              :black -> Square.up(ep_captured_square)
+            end
+          move != Square.to_algebraic(forbidden_square)
+        end)
 
-      # Most recent move was to current pos
+      captured_pawn_last_moved_to_this_square? and
+        captured_pawn_didnt_move_previously?
+    end
 
-
-      required_history_fn = fn history ->
-        captured_pawn_last_moved_to_this_square? =
-          Enum.at(history, 0) == Square.to_algebraic(en_passant_captured_square)
-
-        # captured pawn's previous move was two squares
-        captured_pawn_didnt_move_previously? =
-          Enum.take_every(history, 2)
-          |> Enum.all?(fn move ->
-            forbidden_square =
-              case by do
-                :white -> Square.down(en_passant_captured_square)
-                :black -> Square.up(en_passant_captured_square)
-              end
-            move != Square.to_algebraic(forbidden_square)
-          end)
-
-        captured_pawn_last_moved_to_this_square? and
-          captured_pawn_didnt_move_previously?
+    # capturing pawn must have advanced exactly three ranks
+    capturing_pawn_advanced_exactly_three_ranks? =
+      case player do
+        :white -> ep_captured_square.rank == 5
+        :black -> ep_captured_square.rank == 4
       end
 
-      # capturing pawn must have advanced exactly three ranks
-      capturing_pawn_advanced_exactly_three_ranks? =
-        case by do
-          :white -> source.rank == 5
-          :black -> source.rank == 4
-        end
-
-      en_passant_move =
+    en_passant_moves =
+      sources
+      |> Enum.map(fn source ->
         Move.new(%{
-          movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
+          movements: [Touch.new(source, destination, Piece.new(:pawn, player))],
           capture: :required,
-          captures: en_passant_captured_square,
+          captures: ep_captured_square,
           captured_piece_type: :pawn,
           match_history_fn: required_history_fn
         })
+      end)
 
-      regular_move =
+    regular_moves =
+      sources
+      |> Enum.map(fn source ->
         Move.new(%{
-          movements: [Touch.new(source, destination, Piece.new(:pawn, by))],
+          movements: [Touch.new(source, destination, Piece.new(:pawn, player))],
           capture: :required,
-          captures: destination,
-          captured_piece_type: :pawn
+          captures: destination
         })
+      end)
 
-      if capturing_pawn_advanced_exactly_three_ranks? do
-        [en_passant_move]
-      else
-        [regular_move]
-      end
+    if capturing_pawn_advanced_exactly_three_ranks? do
+      en_passant_moves ++ regular_moves
     else
-      rank = Square.rank(destination)
+      regular_moves
+    end
+  end
 
-      can_move_two? =
-        case {by, rank} do
-          {:white, 4} -> true
-          {:white, _} -> false
-          {:black, 5} -> true
-          {:black, _} -> false
-        end
+  defp possible_pawn_advances(player, destination) do
+    rank = Square.rank(destination)
 
-      move_one_source =
-        case by do
-          :white -> Square.down(destination, 1)
-          :black -> Square.up(destination, 1)
-        end
-
-      move_one =
-        Move.single_touch(Piece.new(:pawn, by), move_one_source, destination)
-
-      move_two_source =
-        case by do
-          :white -> Square.down(destination, 2)
-          :black -> Square.up(destination, 2)
-        end
-
-      move_two =
-        Move.single_touch(Piece.new(:pawn, by), move_two_source, destination)
-
-      cond do
-        can_move_two? -> [move_one, move_two]
-        true -> [move_one]
+    can_move_two? =
+      case {player, rank} do
+        {:white, 4} -> true
+        {:white, _} -> false
+        {:black, 5} -> true
+        {:black, _} -> false
       end
+
+    move_one_source =
+      case player do
+        :white -> Square.down(destination, 1)
+        :black -> Square.up(destination, 1)
+      end
+
+    move_one =
+      Move.single_touch(Piece.new(:pawn, player), move_one_source, destination)
+
+    move_two_source =
+      case player do
+        :white -> Square.down(destination, 2)
+        :black -> Square.up(destination, 2)
+      end
+
+    move_two =
+      Move.single_touch(Piece.new(:pawn, player), move_two_source, destination)
+
+    cond do
+      can_move_two? -> [move_one, move_two]
+      true -> [move_one]
     end
   end
 
