@@ -146,8 +146,9 @@ defmodule ChexxTest do
         move = Square.to_algebraic(dest_square)
 
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:pawn, :black, start_square)
+          Board.new()
+          |> Board.put_piece(:pawn, :black, start_square)
+          |> Chexx.new()
           |> Chexx.move(:black, move)
           |> Chexx.piece_at(dest_square)
 
@@ -158,8 +159,9 @@ defmodule ChexxTest do
 
     test "can move a white pawn up two squares if it is in the starting row" do
       piece =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :white, {:e, 2})
+        Board.new()
+        |> Board.put_piece(:pawn, :white, :e, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "e4")
         |> Chexx.piece_at({:e, 4})
 
@@ -168,34 +170,38 @@ defmodule ChexxTest do
     end
 
     test "allows check notation when the king is in check" do
-      Chexx.new()
-      |> Chexx.put_piece(:king, :black, {:e, 8})
-      |> Chexx.put_piece(:pawn, :white, {:d, 6})
+      Board.new()
+      |> Board.put_piece(:king, :black, :e, 8)
+      |> Board.put_piece(:pawn, :white, :d, 6)
+      |> Chexx.new()
       |> Chexx.move(:white, "d7+")
     end
 
     test "can't give check notation if the king is not in check" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:pawn, :white, {:d, 5})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:pawn, :white, :d, 5)
+        |> Chexx.new()
         |> Chexx.move(:white, "d6+")
       end
     end
 
     test "expects notation when king is in check" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:pawn, :white, {:d, 6})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:pawn, :white, :d, 6)
+        |> Chexx.new()
         |> Chexx.move(:white, "d7")
       end
     end
 
     test "can move a black pawn down two squares if it is in the starting row" do
       piece =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 7})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :e, 7)
+        |> Chexx.new()
         |> Chexx.move(:black, "e5")
         |> Chexx.piece_at({:e, 5})
 
@@ -205,27 +211,30 @@ defmodule ChexxTest do
 
     test "can't move a white pawn up two squares if a piece is in the way" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :white, {:e, 2})
-        |> Chexx.put_piece(:pawn, :black, {:e, 3})
+        Board.new()
+        |> Board.put_piece(:pawn, :white, :e, 2)
+        |> Board.put_piece(:pawn, :black, :e, 3)
+        |> Chexx.new()
         |> Chexx.move(:white, "e4")
       end
     end
 
     test "can't move a black pawn down two squares if a piece is in the way" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 7})
-        |> Chexx.put_piece(:pawn, :white, {:e, 6})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :e, 7)
+        |> Board.put_piece(:pawn, :white, :e, 6)
+        |> Chexx.new()
         |> Chexx.move(:white, "e5")
       end
     end
 
     test "can move a piece when two pieces can share a destination, as black" do
       piece =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 6})
-        |> Chexx.put_piece(:pawn, :white, {:e, 4})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :e, 6)
+        |> Board.put_piece(:pawn, :white, :e, 4)
+        |> Chexx.new()
         |> Chexx.move(:black, "e5")
         |> Chexx.piece_at({:e, 5})
 
@@ -235,9 +244,10 @@ defmodule ChexxTest do
 
     test "can move a piece when two pieces can share a destination, as white" do
       piece =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 6})
-        |> Chexx.put_piece(:pawn, :white, {:e, 4})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :e, 6)
+        |> Board.put_piece(:pawn, :white, :e, 4)
+        |> Chexx.new()
         |> Chexx.move(:white, "e5")
         |> Chexx.piece_at({:e, 5})
 
@@ -247,25 +257,28 @@ defmodule ChexxTest do
 
     test "can't move the other player's pieces" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :white, {:e, 3})
+        Board.new()
+        |> Board.put_piece(:pawn, :white, :e, 3)
+        |> Chexx.new()
         |> Chexx.move(:black, "e4")
       end
     end
 
     test "can't jump the other player's pieces" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :white, {:e, 3})
-        |> Chexx.put_piece(:pawn, :black, {:e, 4})
+        Board.new()
+        |> Board.put_piece(:pawn, :white, :e, 3)
+        |> Board.put_piece(:pawn, :black, :e, 4)
+        |> Chexx.new()
         |> Chexx.move(:white, "e5")
       end
     end
 
     test "can't move other pieces via pawn notation" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:bishop, :white, {:e, 3})
+        Board.new()
+        |> Board.put_piece(:bishop, :white, :e, 3)
+        |> Chexx.new()
         |> Chexx.move(:white, "e4")
       end
     end
@@ -279,9 +292,10 @@ defmodule ChexxTest do
 
     test "pawn capture" do
       piece =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:f, 5})
-        |> Chexx.put_piece(:pawn, :white, {:e, 4})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :f, 5)
+        |> Board.put_piece(:pawn, :white, :e, 4)
+        |> Chexx.new()
         |> Chexx.move(:black, "fxe4")
         |> Chexx.piece_at({:e, 4})
 
@@ -291,17 +305,19 @@ defmodule ChexxTest do
 
     test "capture is required in a pawn capture" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :white, {:e, 3})
+        Board.new()
+        |> Board.put_piece(:pawn, :white, :e, 3)
+        |> Chexx.new()
         |> Chexx.move(:white, "exd4")
       end
     end
 
     test "white en passant capture" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:e, 7})
-        |> Chexx.put_piece(:pawn, :white, {:f, 5})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :e, 7)
+        |> Board.put_piece(:pawn, :white, :f, 5)
+        |> Chexx.new()
         |> Chexx.move(:black, "e5")
         |> Chexx.move(:white, "fxe6")
 
@@ -315,9 +331,10 @@ defmodule ChexxTest do
 
     test "black en passant capture" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:pawn, :black, {:f, 4})
-        |> Chexx.put_piece(:pawn, :white, {:e, 2})
+        Board.new()
+        |> Board.put_piece(:pawn, :black, :f, 4)
+        |> Board.put_piece(:pawn, :white, :e, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "e4")
         |> Chexx.move(:black, "fxe3")
 
@@ -337,8 +354,9 @@ defmodule ChexxTest do
         start = Chexx.Square.new(:b, 2)
         destination = Chexx.Square.move_direction(start, direction, 1)
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:king, color, start)
+          Board.new()
+          |> Board.put_piece(:king, color, start)
+          |> Chexx.new()
           |> Chexx.move(color, "K#{Square.to_algebraic(destination)}")
           |> Chexx.piece_at(destination)
 
@@ -374,8 +392,9 @@ defmodule ChexxTest do
         destination = Square.move_direction(start, direction, distance)
 
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:rook, color, start)
+          Board.new()
+          |> Board.put_piece(:rook, color, start)
+          |> Chexx.new()
           |> Chexx.move(color, "R#{Square.to_algebraic(destination)}")
           |> Chexx.piece_at(destination)
 
@@ -386,9 +405,10 @@ defmodule ChexxTest do
 
     test "rook can't jump other pieces" do
       assert_raise RuntimeError, "No valid moves found for white.", fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
-        |> Chexx.put_piece(:bishop, :white, {:h, 2})
+        Board.new()
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Board.put_piece(:bishop, :white, :h, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Rh3")
       end
     end
@@ -397,9 +417,10 @@ defmodule ChexxTest do
   describe "white kingside castle" do
     test "succeeds when pieces are in the right place" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
-        |> Chexx.put_piece(:king, :white, {:e, 1})
+        Board.new()
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
 
       actual_king = Chexx.piece_at(board, {:g, 1})
@@ -413,9 +434,10 @@ defmodule ChexxTest do
 
     test "can't castle if the king has moved before" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "Ke2")
         |> Chexx.move(:white, "Ke1")
         |> Chexx.move(:white, "0-0")
@@ -424,9 +446,10 @@ defmodule ChexxTest do
 
     test "can't castle if the rook has moved before" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "Rh2")
         |> Chexx.move(:white, "Rh1")
         |> Chexx.move(:white, "0-0")
@@ -435,54 +458,60 @@ defmodule ChexxTest do
 
     test "can't castle if rook isn't there" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
 
     test "can't castle if rook isn't a rook" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:bishop, :white, {:h, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:bishop, :white, :h, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
 
     test "can't castle if king isn't there" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        Board.new()
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
 
     test "can't castle if king isn't a king" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:queen, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
+        Board.new()
+        |> Board.put_piece(:queen, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
 
     test "can't castle if there's a piece in the king's destination" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
-        |> Chexx.put_piece(:knight, :white, {:g, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Board.put_piece(:knight, :white, :g, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
 
     test "can't castle if there's a piece in the rook's destination" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:h, 1})
-        |> Chexx.put_piece(:bishop, :white, {:f, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :h, 1)
+        |> Board.put_piece(:bishop, :white, :f, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0")
       end
     end
@@ -491,9 +520,10 @@ defmodule ChexxTest do
   describe "black kingside castle" do
     test "succeeds when pieces are in the right place" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:rook, :black, {:h, 8})
-        |> Chexx.put_piece(:king, :black, {:e, 8})
+        Board.new()
+        |> Board.put_piece(:rook, :black, :h, 8)
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
 
       actual_king = Chexx.piece_at(board, {:g, 8})
@@ -507,54 +537,60 @@ defmodule ChexxTest do
 
     test "can't castle if rook isn't there" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
 
     test "can't castle if rook isn't a rook" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:bishop, :black, {:h, 8})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:bishop, :black, :h, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
 
     test "can't castle if king isn't there" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        Board.new()
+        |> Board.put_piece(:rook, :black, :h, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
 
     test "can't castle if king isn't a king" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:queen, :black, {:e, 8})
-        |> Chexx.put_piece(:rook, :black, {:h, 8})
+        Board.new()
+        |> Board.put_piece(:queen, :black, :e, 8)
+        |> Board.put_piece(:rook, :black, :h, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
 
     test "can't castle if there's a piece in the king's destination" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:rook, :black, {:h, 8})
-        |> Chexx.put_piece(:knight, :black, {:g, 8})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:rook, :black, :h, 8)
+        |> Board.put_piece(:knight, :black, :g, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
 
     test "can't castle if there's a piece in the rook's destination" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:rook, :black, {:h, 8})
-        |> Chexx.put_piece(:bishop, :black, {:f, 8})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:rook, :black, :h, 8)
+        |> Board.put_piece(:bishop, :black, :f, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0")
       end
     end
@@ -563,9 +599,10 @@ defmodule ChexxTest do
   describe "white queenside castle" do
     test "succeeds when pieces are in the right place" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :a, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0-0")
 
       actual_king = Chexx.piece_at(board, {:c, 1})
@@ -579,9 +616,10 @@ defmodule ChexxTest do
 
     test "can't castle if the king has moved before" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :a, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "Ke2")
         |> Chexx.move(:white, "Ke1")
         |> Chexx.move(:white, "0-0-0")
@@ -590,9 +628,10 @@ defmodule ChexxTest do
 
     test "can't castle if the rook has moved before" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:a, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :a, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "Ra2")
         |> Chexx.move(:white, "Ra1")
         |> Chexx.move(:white, "0-0-0")
@@ -601,10 +640,11 @@ defmodule ChexxTest do
 
     test "can't castle queenside if the intervening square is occupied" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:king, :white, {:e, 1})
-        |> Chexx.put_piece(:rook, :white, {:a, 1})
-        |> Chexx.put_piece(:knight, :white, {:b, 1})
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:rook, :white, :a, 1)
+        |> Board.put_piece(:knight, :white, :b, 1)
+        |> Chexx.new()
         |> Chexx.move(:white, "0-0-0")
       end
     end
@@ -613,9 +653,10 @@ defmodule ChexxTest do
   describe "black queenside castle" do
     test "succeeds when pieces are in the right place" do
       board =
-        Chexx.new()
-        |> Chexx.put_piece(:king, :black, {:e, 8})
-        |> Chexx.put_piece(:rook, :black, {:a, 8})
+        Board.new()
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:rook, :black, :a, 8)
+        |> Chexx.new()
         |> Chexx.move(:black, "0-0-0")
 
       actual_king = Chexx.piece_at(board, {:c, 8})
@@ -640,8 +681,9 @@ defmodule ChexxTest do
         destination = Square.move_direction(start, direction, distance)
 
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:queen, color, start)
+          Board.new()
+          |> Board.put_piece(:queen, color, start)
+          |> Chexx.new()
           |> Chexx.move(color, "Q#{Square.to_algebraic(destination)}")
           |> Chexx.piece_at(destination)
 
@@ -652,18 +694,20 @@ defmodule ChexxTest do
 
     test "can't traverse through pieces" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:queen, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        Board.new()
+        |> Board.put_piece(:queen, :white, :a, 1)
+        |> Board.put_piece(:pawn, :white, :b, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Qc3")
       end
     end
 
     test "can capture" do
       piece_at_dest =
-        Chexx.new()
-        |> Chexx.put_piece(:queen, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :black, {:b, 2})
+        Board.new()
+        |> Board.put_piece(:queen, :white, :a, 1)
+        |> Board.put_piece(:pawn, :black, :b, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Qxb2")
         |> Chexx.piece_at(:b, 2)
 
@@ -684,8 +728,9 @@ defmodule ChexxTest do
         destination = Square.move_direction(start, direction, distance)
 
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:bishop, color, start)
+          Board.new()
+          |> Board.put_piece(:bishop, color, start)
+          |> Chexx.new()
           |> Chexx.move(color, "B#{Square.to_algebraic(destination)}")
           |> Chexx.piece_at(destination)
 
@@ -696,18 +741,20 @@ defmodule ChexxTest do
 
     test "can't traverse through pieces" do
       assert_raise RuntimeError, fn ->
-        Chexx.new()
-        |> Chexx.put_piece(:bishop, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        Board.new()
+        |> Board.put_piece(:bishop, :white, :a, 1)
+        |> Board.put_piece(:pawn, :white, :b, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Bc3")
       end
     end
 
     test "can capture" do
       piece_at_dest =
-        Chexx.new()
-        |> Chexx.put_piece(:bishop, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :black, {:b, 2})
+        Board.new()
+        |> Board.put_piece(:bishop, :white, :a, 1)
+        |> Board.put_piece(:pawn, :black, :b, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Bxb2")
         |> Chexx.piece_at(:b, 2)
 
@@ -737,8 +784,9 @@ defmodule ChexxTest do
                 Square.within?(destination, 1..8, 1..8) do
 
         piece_at_dest =
-          Chexx.new()
-          |> Chexx.put_piece(:knight, color, start)
+          Board.new()
+          |> Board.put_piece(:knight, color, start)
+          |> Chexx.new()
           |> Chexx.move(color, "N#{Square.to_algebraic(destination)}")
           |> Chexx.piece_at(destination)
 
@@ -749,11 +797,12 @@ defmodule ChexxTest do
 
     test "can traverse through pieces" do
       piece_at_dest =
-        Chexx.new()
-        |> Chexx.put_piece(:knight, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :white, {:a, 2})
-        |> Chexx.put_piece(:pawn, :white, {:a, 3})
-        |> Chexx.put_piece(:pawn, :white, {:b, 2})
+        Board.new()
+        |> Board.put_piece(:knight, :white, :a, 1)
+        |> Board.put_piece(:pawn, :white, :a, 2)
+        |> Board.put_piece(:pawn, :white, :a, 3)
+        |> Board.put_piece(:pawn, :white, :b, 2)
+        |> Chexx.new()
         |> Chexx.move(:white, "Nb3")
         |> Chexx.piece_at(:b, 3)
 
@@ -763,9 +812,10 @@ defmodule ChexxTest do
 
     test "can capture" do
       piece_at_dest =
-        Chexx.new()
-        |> Chexx.put_piece(:knight, :white, {:a, 1})
-        |> Chexx.put_piece(:pawn, :black, {:b, 3})
+        Board.new()
+        |> Board.put_piece(:knight, :white, :a, 1)
+        |> Board.put_piece(:pawn, :black, :b, 3)
+        |> Chexx.new()
         |> Chexx.move(:white, "Nxb3")
         |> Chexx.piece_at(:b, 3)
 
@@ -776,9 +826,10 @@ defmodule ChexxTest do
 
   test "can't put your king into check" do
     assert_raise RuntimeError, fn ->
-      Chexx.new()
-      |> Chexx.put_piece(:king, :white, {:a, 1})
-      |> Chexx.put_piece(:rook, :black, {:b, 2})
+      Board.new()
+      |> Board.put_piece(:king, :white, :a, 1)
+      |> Board.put_piece(:rook, :black, :b, 2)
+      |> Chexx.new()
       |> Chexx.move(:white, "Kb1")
     end
   end

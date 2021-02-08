@@ -23,6 +23,10 @@ defmodule Chexx.Board do
     %__MODULE__{}
   end
 
+  def put_piece(%__MODULE__{} = board, type, color, file, rank) do
+    put_piece(board, type, color, Square.new(file, rank))
+  end
+
   def put_piece(%__MODULE__{} = board, type, color, %Square{} = square) when is_piece(type) and is_color(color) do
     square = Square.new(square)
 
