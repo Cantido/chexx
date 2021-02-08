@@ -167,6 +167,31 @@ defmodule ChexxTest do
         assert piece.color == :white
     end
 
+    test "allows check notation when the king is in check" do
+      Chexx.new()
+      |> Chexx.put_piece(:king, :black, {:e, 8})
+      |> Chexx.put_piece(:pawn, :white, {:d, 6})
+      |> Chexx.move(:white, "d7+")
+    end
+
+    test "can't give check notation if the king is not in check" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:pawn, :white, {:d, 5})
+        |> Chexx.move(:white, "d6+")
+      end
+    end
+
+    test "expects notation when king is in check" do
+      assert_raise RuntimeError, fn ->
+        Chexx.new()
+        |> Chexx.put_piece(:king, :black, {:e, 8})
+        |> Chexx.put_piece(:pawn, :white, {:d, 6})
+        |> Chexx.move(:white, "d7")
+      end
+    end
+
     test "can move a black pawn down two squares if it is in the starting row" do
       piece =
         Chexx.new()

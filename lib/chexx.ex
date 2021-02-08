@@ -48,9 +48,10 @@ defmodule Chexx do
   end
 
   def move(game, by, notation) do
+    parsed_notation =  AlgebraicNotation.parse(notation)
     move =
-      possible_moves(notation, by)
-      |> disambiguate_moves(game, by)
+      possible_moves(parsed_notation, by)
+      |> disambiguate_moves(game, by, parsed_notation)
 
     board = Board.move(game.board, move)
 
@@ -60,22 +61,22 @@ defmodule Chexx do
   end
 
   defp possible_moves(notation, player) do
-    case AlgebraicNotation.parse(notation) do
+    case notation.move_type do
       :kingside_castle -> kingside_castle(player)
       :queenside_castle -> queenside_castle(player)
-      regular_move ->
-        case regular_move.piece_type do
-          :pawn -> possible_pawn_sources(player, regular_move.destination)
-          :king -> possible_king_sources(player, regular_move.destination)
-          :queen -> possible_queen_sources(player, regular_move.destination)
-          :rook -> possible_rook_sources(player, regular_move.destination)
-          :bishop -> possible_bishop_sources(player, regular_move.destination)
-          :knight -> possible_knight_sources(player, regular_move.destination)
+      :regular ->
+        case notation.piece_type do
+          :pawn -> possible_pawn_sources(player, notation.destination)
+          :king -> possible_king_sources(player, notation.destination)
+          :queen -> possible_queen_sources(player, notation.destination)
+          :rook -> possible_rook_sources(player, notation.destination)
+          :bishop -> possible_bishop_sources(player, notation.destination)
+          :knight -> possible_knight_sources(player, notation.destination)
         end
     end
   end
 
-  defp disambiguate_moves(moves, game, by) do
+  defp disambiguate_moves(moves, game, by, parsed_notation) do
     moves =
       moves
       |> Enum.filter(&Board.valid_move?(game.board, by, &1))
@@ -83,6 +84,14 @@ defmodule Chexx do
         match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
 
         match_history_fn.(game.history)
+      end)
+      |> Enum.filter(fn move ->
+        board = Board.move(game.board, move)
+        results_in_check? = king_in_check?(%{game | board: board}, Color.opponent(by))
+
+        expected_check = parsed_notation.check?
+
+        not xor(expected_check, results_in_check?)
       end)
       |> Enum.reject(fn possible_move ->
         board = Board.move(game.board, possible_move)
@@ -93,6 +102,7 @@ defmodule Chexx do
       raise "No valid moves found for #{by}."
     end
 
+
     possible_moves_count = Enum.count(moves)
     if possible_moves_count > 1 do
       raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves: #{inspect moves}"
@@ -100,6 +110,11 @@ defmodule Chexx do
 
     Enum.at(moves, 0)
   end
+
+  defp xor(true, true), do: false
+  defp xor(true, false), do: true
+  defp xor(false, true), do: true
+  defp xor(false, false), do: false
 
   defp king_in_check?(game, player_in_check) do
     opponent = Color.opponent(player_in_check)

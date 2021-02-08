@@ -1,13 +1,14 @@
 defmodule Chexx.AlgebraicNotation do
 
   alias Chexx.Square
-  
-  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])$/
+
+  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])(?<check_flag>\+)?$/
 
   def parse(notation) do
     case notation do
-      "0-0" -> :kingside_castle
-      "0-0-0" -> :queenside_castle
+      # TODO: allow castling to mark the check? flag
+      "0-0" -> %{move_type: :kingside_castle, check?: false}
+      "0-0-0" -> %{move_type: :queenside_castle, check?: false}
       notation -> parse_regular_coords(notation)
     end
   end
@@ -64,10 +65,12 @@ defmodule Chexx.AlgebraicNotation do
       end
 
     %{
+      move_type: :regular,
       piece_type: moved_piece,
       source: source,
       destination: Square.new(dest_file, dest_rank),
-      capture: capture_type
+      capture: capture_type,
+      check?: Map.get(captures, "check_flag") == "+"
     }
   end
 end
