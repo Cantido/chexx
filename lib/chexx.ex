@@ -149,7 +149,7 @@ defmodule Chexx do
       end)
 
     if Enum.empty?(moves) do
-      raise "No valid moves found for #{by}."
+      raise "No valid moves found for #{by}. on this board: \n#{inspect(game.board)}\n"
     end
 
 

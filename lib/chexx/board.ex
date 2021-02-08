@@ -56,6 +56,10 @@ defmodule Chexx.Board do
   def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(_), do: false
 
+  def piece_at(%__MODULE__{} = board, file, row) do
+    piece_at(board, Square.new(file, row))
+  end
+
   def piece_at(_board, nil), do: nil
 
   def piece_at(%__MODULE__{} = board, %Square{} = square) do
@@ -134,5 +138,27 @@ defmodule Chexx.Board do
     board
     |> delete_piece(touch.source)
     |> put_piece(piece.type, piece.color, touch.destination)
+  end
+
+  def to_string(board) do
+    for rank <- 8..1, file <- 1..8 do
+      Chexx.Board.piece_at(board, file, rank)
+    end
+    |> Enum.map(fn piece ->
+      if is_nil(piece) do
+        " "
+      else
+        Piece.to_unicode(piece)
+      end
+    end)
+    |> Enum.chunk_every(8)
+    |> Enum.intersperse("\n")
+    |> Enum.join("")
+  end
+
+  defimpl Inspect, for: __MODULE__ do
+    def inspect(board, _opts) do
+      Chexx.Board.to_string(board)
+    end
   end
 end
