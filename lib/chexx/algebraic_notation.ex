@@ -47,14 +47,8 @@ defmodule Chexx.AlgebraicNotation do
       if source_rank_notation == "" do
         nil
       else
-        String.to_existing_atom(source_rank_notation)
-      end
-
-    source =
-      cond do
-        not is_nil(source_file) and not is_nil(source_rank) -> Square.new(source_file, source_rank)
-        not is_nil(source_file) -> source_file
-        true -> nil
+        {source_rank, ""} = Integer.parse(source_rank_notation)
+        source_rank
       end
 
     capture_type =
@@ -67,7 +61,8 @@ defmodule Chexx.AlgebraicNotation do
     %{
       move_type: :regular,
       piece_type: moved_piece,
-      source: source,
+      source_file: source_file,
+      source_rank: source_rank,
       destination: Square.new(dest_file, dest_rank),
       capture: capture_type,
       check?: Map.get(captures, "check_flag") == "+"

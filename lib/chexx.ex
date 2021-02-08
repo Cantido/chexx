@@ -147,6 +147,18 @@ defmodule Chexx do
         board = Board.move(game.board, possible_move)
         king_in_check?(%{game | board: board}, by)
       end)
+      |> Enum.filter(fn possible_move ->
+        if not is_nil(parsed_notation[:source_file]) do
+          if parsed_notation.move_type == :regular do
+            [touch] = possible_move.movements
+            parsed_notation.source_file == Square.file(touch.source)
+          else
+            true
+          end
+        else
+          true
+        end
+      end)
 
     if Enum.empty?(moves) do
       raise "No valid moves found for #{by}. on this board: \n#{inspect(game.board)}\n"

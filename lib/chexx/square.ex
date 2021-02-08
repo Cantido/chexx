@@ -28,7 +28,7 @@ defmodule Chexx.Square do
   end
 
   def file(%__MODULE__{file: file}) do
-    file
+    number_to_file(file)
   end
 
   def rank(%__MODULE__{rank: rank}) do
