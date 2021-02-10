@@ -891,4 +891,16 @@ defmodule ChexxTest do
 
     assert game.status == :black_wins
   end
+
+  test "three-piece mate" do
+    game =
+      Board.new()
+      |> Board.put_piece(:king, :white, :f, 5)
+      |> Board.put_piece(:king, :black, :h, 5)
+      |> Board.put_piece(:rook, :white, :a, 1)
+      |> Chexx.new(:white)
+      |> Chexx.move("Rh1#")
+
+    assert game.status == :white_wins
+  end
 end
