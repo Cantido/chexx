@@ -17,6 +17,7 @@ defmodule Chexx do
     history: [],
     current_player: :white,
     board: Board.new(),
+    status: :in_progress
   ]
 
   # TODO: validate when the check or checkmate symbol appears
@@ -96,7 +97,21 @@ defmodule Chexx do
     end)
   end
 
+  def resign(game) do
+    status =
+      case game.current_player do
+        :white -> :black_wins
+        :black -> :white_wins
+      end
+
+    %{game | status: status}
+  end
+
   def move(game, notation) do
+    unless game.status == :in_progress do
+      raise "Game ended, status: #{game.status}"
+    end
+
     parsed_notation =  AlgebraicNotation.parse(notation)
     move =
       possible_moves(parsed_notation, game.current_player)
