@@ -128,6 +128,11 @@ defmodule Chexx.Square do
   defp number_to_file(7), do: :g
   defp number_to_file(8), do: :h
 
+
+  @doc """
+  Get the squares in-between two other squares.
+  If the squares are not lined up on any axis, then return an empty list.
+  """
   def squares_between(%__MODULE__{file: src_file, rank: src_rank} = src, %__MODULE__{file: dest_file, rank: dest_rank} = dest) do
     cond do
       src_file == dest_file ->
@@ -151,6 +156,7 @@ defmodule Chexx.Square do
             abs(x) == abs(y) do
           new(src_file + x, src_rank + y)
         end
+      true -> []
     end
   end
 

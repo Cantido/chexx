@@ -113,16 +113,38 @@ defmodule Chexx do
     end
 
     parsed_notation =  AlgebraicNotation.parse(notation)
-    move =
+    moves =
       possible_moves(parsed_notation, game.current_player)
       |> disambiguate_moves(game, game.current_player, parsed_notation)
+
+
+    if Enum.empty?(moves) do
+      raise "No valid moves found for #{game.current_player} matching #{inspect notation}. on this board: \n#{inspect(game.board)}\n"
+    end
+
+    possible_moves_count = Enum.count(moves)
+    if possible_moves_count > 1 do
+      raise "Ambiguous move: notation #{notation} can mean #{possible_moves_count} possible moves: #{inspect moves}"
+    end
+
+    move = Enum.at(moves, 0)
 
     board = Board.move(game.board, move)
     opponent = Color.opponent(game.current_player)
 
     game = put_move(game, notation)
 
-    %{game | board: board, current_player: opponent}
+    game_status =
+      if parsed_notation[:check_status] == :checkmate do
+        case game.current_player do
+          :white -> :white_wins
+          :black -> :black_wins
+        end
+      else
+        game.status
+      end
+
+    %{game | board: board, current_player: opponent, status: game_status}
   end
 
   defp possible_moves(notation, player) do
@@ -141,50 +163,58 @@ defmodule Chexx do
     end
   end
 
+  require Logger
+
   defp disambiguate_moves(moves, game, by, parsed_notation) do
-    moves =
-      moves
-      |> Enum.filter(&Board.valid_move?(game.board, by, &1))
-      |> Enum.filter(fn possible_move ->
-        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+    moves
+    |> Enum.filter(&Board.valid_move?(game.board, by, &1))
 
-        match_history_fn.(game.history)
-      end)
-      |> Enum.filter(fn move ->
-        board = Board.move(game.board, move)
-        results_in_check? = king_in_check?(%{game | board: board}, Color.opponent(by))
+    |> Enum.filter(fn possible_move ->
+      match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
 
-        expected_check = parsed_notation.check?
+      match_history_fn.(game.history)
+    end)
+    |> Enum.filter(fn move ->
+      opponent = Color.opponent(by)
 
-        not xor(expected_check, results_in_check?)
-      end)
-      |> Enum.reject(fn possible_move ->
-        board = Board.move(game.board, possible_move)
-        king_in_check?(%{game | board: board}, by)
-      end)
-      |> Enum.filter(fn possible_move ->
-        if not is_nil(parsed_notation[:source_file]) do
-          if parsed_notation.move_type == :regular do
-            [touch] = possible_move.movements
-            parsed_notation.source_file == Square.file(touch.source)
-          else
-            true
-          end
+      expected_check = parsed_notation[:check_status] == :check
+      expected_checkmate = parsed_notation[:check_status] == :checkmate
+
+      board = Board.move(game.board, move)
+      results_in_check? = king_in_check?(%{game | board: board}, opponent)
+
+      results_in_checkmate? =
+        if results_in_check? do
+          checkmate?(%{game | board: board}, opponent)
+        else
+          false
+        end
+
+      valid_check_notation = not xor(expected_check, results_in_check?)
+      valid_checkmate_notation = not xor(expected_checkmate, results_in_checkmate?)
+
+      if results_in_checkmate? do
+        valid_checkmate_notation
+      else
+        valid_check_notation
+      end
+    end)
+    |> Enum.filter(fn possible_move ->
+      if not is_nil(parsed_notation[:source_file]) do
+        if parsed_notation.move_type == :regular do
+          [touch] = possible_move.movements
+          parsed_notation.source_file == Square.file(touch.source)
         else
           true
         end
-      end)
-
-    if Enum.empty?(moves) do
-      raise "No valid moves found for #{by}. on this board: \n#{inspect(game.board)}\n"
-    end
-
-    possible_moves_count = Enum.count(moves)
-    if possible_moves_count > 1 do
-      raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves: #{inspect moves}"
-    end
-
-    Enum.at(moves, 0)
+      else
+        true
+      end
+    end)
+    |> Enum.reject(fn possible_move ->
+      board = Board.move(game.board, possible_move)
+      king_in_check?(%{game | board: board}, by)
+    end)
   end
 
   defp xor(true, true), do: false
@@ -218,6 +248,48 @@ defmodule Chexx do
       end)
 
     Enum.count(possible_king_captures) > 0
+  end
+
+  require Logger
+
+  defp checkmate?(game, player_checkmated) do
+    regular_moves =
+      game.board.occupied_positions
+      |> Enum.filter(fn occ_pos ->
+        occ_pos.piece.color == player_checkmated
+      end)
+      |> Enum.flat_map(fn %{square: square, piece: piece} ->
+        case piece.type do
+          :pawn -> possible_pawn_moves(player_checkmated, square)
+          :king -> possible_king_moves(player_checkmated, square)
+          :queen -> possible_queen_moves(player_checkmated, square)
+          :rook -> possible_rook_moves(player_checkmated, square)
+          :bishop -> possible_bishop_moves(player_checkmated, square)
+          :knight -> possible_knight_moves(player_checkmated, square)
+        end
+      end)
+
+    all_moves =
+      kingside_castle(player_checkmated) ++
+      queenside_castle(player_checkmated) ++
+      regular_moves
+
+    possible_moves =
+      all_moves
+      |> Enum.filter(&Board.valid_move?(game.board, player_checkmated, &1))
+      |> Enum.filter(fn possible_move ->
+        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+
+        match_history_fn.(game.history)
+      end)
+
+    all_moves_result_in_check =
+      Enum.all?(possible_moves, fn move ->
+        board = Board.move(game.board, move)
+        king_in_check?(%{game | board: board}, player_checkmated)
+      end)
+
+    all_moves_result_in_check
   end
 
   defp kingside_castle(by) do
@@ -352,6 +424,56 @@ defmodule Chexx do
     not is_nil(piece) and piece.color == color and piece.type == type
   end
 
+  defp possible_pawn_moves(player, source) do
+    piece = Piece.new(:pawn, player)
+    advance_direction =
+      case player do
+        :white -> :up
+        :black -> :down
+      end
+    start_rank =
+      case player do
+        :white -> 2
+        :black -> 7
+      end
+
+    forward_moves = [Move.single_touch(piece, source, Square.move_direction(source, advance_direction, 1), capture: :forbidden)]
+
+    forward_moves =
+      if Square.rank(source) == start_rank do
+        move = Move.single_touch(piece, source, Square.move_direction(source, advance_direction, 2), capture: :forbidden)
+        [move | forward_moves]
+      else
+        forward_moves
+      end
+
+    capture_right_dest = source |> Square.move_direction(advance_direction) |> Square.right()
+    capture_left_dest = source |> Square.move_direction(advance_direction) |> Square.left()
+
+    capture_moves = [
+      Move.single_touch(piece, source, capture_right_dest, capture: :required, captures: capture_right_dest),
+      Move.single_touch(piece, source, capture_left_dest, capture: :required, captures: capture_left_dest)
+    ]
+
+    en_passant_moves = [
+      Move.single_touch(piece, source, capture_right_dest, capture: :required, captures: Square.right(source), capture_piece_type: :pawn),
+      Move.single_touch(piece, source, capture_left_dest, capture: :required, captures: Square.left(source), capture_piece_type: :pawn)
+    ]
+
+    en_passant_capture_rank =
+      case player do
+        :white -> 5
+        :black -> 4
+      end
+
+
+    if Square.rank(source) == en_passant_capture_rank do
+      forward_moves ++ capture_moves ++ en_passant_moves
+    else
+      forward_moves ++ capture_moves
+    end
+  end
+
   defp possible_pawn_sources(by, destination) do
     possible_pawn_captures(by, destination) ++ possible_pawn_advances(by, destination)
   end
@@ -458,70 +580,125 @@ defmodule Chexx do
     end
   end
 
-  defp possible_king_sources(player, destination) do
-    for distance <- [1], direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
-      Square.move_direction(destination, direction, distance)
-    end
-    |> Enum.filter(fn square ->
-      Square.within?(square, 1..8, 1..8)
+  defp possible_king_moves(player, source) do
+    king_movements(source)
+    |> Enum.map(fn destination ->
+      Move.single_touch(Piece.new(:king, player), source, destination)
     end)
+  end
+
+  defp possible_king_sources(player, destination) do
+    king_movements(destination)
     |> Enum.map(fn source ->
       Move.single_touch(Piece.new(:king, player), source, destination)
     end)
   end
 
-  defp possible_queen_sources(player, destination) do
-    for distance <- 1..7, direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
-      Square.move_direction(destination, direction, distance)
+  defp king_movements(source) do
+    for distance <- [1], direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
+      Square.move_direction(source, direction, distance)
     end
     |> Enum.filter(fn square ->
       Square.within?(square, 1..8, 1..8)
     end)
+  end
+
+  defp possible_queen_moves(player, source) do
+    queen_movements(source)
+    |> Enum.map(fn destination ->
+      Move.single_touch(Piece.new(:queen, player), source, destination)
+    end)
+  end
+
+  defp possible_queen_sources(player, destination) do
+    queen_movements(destination)
     |> Enum.map(fn source ->
       Move.single_touch(Piece.new(:queen, player), source, destination)
     end)
   end
 
-  defp possible_rook_sources(player, destination) do
-    for distance <- 1..7, direction <- [:up, :left, :down, :right] do
-      Square.move_direction(destination, direction, distance)
+  defp queen_movements(source) do
+    for distance <- 1..7, direction <- [:up, :up_right, :right, :down_right, :down, :down_left, :left, :up_left] do
+      Square.move_direction(source, direction, distance)
     end
     |> Enum.filter(fn square ->
       Square.within?(square, 1..8, 1..8)
     end)
+  end
+
+  defp possible_rook_moves(player, source) do
+    rook_movements(source)
+    |> Enum.map(fn destination ->
+      Move.single_touch(Piece.new(:rook, player), source, destination)
+    end)
+  end
+
+  defp possible_rook_sources(player, destination) do
+    rook_movements(destination)
     |> Enum.map(fn source ->
       Move.single_touch(Piece.new(:rook, player), source, destination)
     end)
   end
 
-  defp possible_bishop_sources(player, destination) do
-    for distance <- 1..7, direction <- [:up_right, :down_right, :down_left, :up_left] do
-      Square.move_direction(destination, direction, distance)
+  defp rook_movements(around) do
+    for distance <- 1..7, direction <- [:up, :left, :down, :right] do
+      Square.move_direction(around, direction, distance)
     end
     |> Enum.filter(fn square ->
       Square.within?(square, 1..8, 1..8)
     end)
+  end
+
+  defp possible_bishop_moves(player, source) do
+    bishop_movements(source)
+    |> Enum.map(fn destination ->
+      Move.single_touch(Piece.new(:bishop, player), source, destination)
+    end)
+  end
+
+  defp possible_bishop_sources(player, destination) do
+    bishop_movements(destination)
     |> Enum.map(fn source ->
       Move.single_touch(Piece.new(:bishop, player), source, destination)
     end)
   end
 
+  defp bishop_movements(around) do
+    for distance <- 1..7, direction <- [:up_right, :down_right, :down_left, :up_left] do
+      Square.move_direction(around, direction, distance)
+    end
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
+    end)
+  end
+
+  defp possible_knight_moves(player, source) do
+    knight_movements(source)
+    |> Enum.map(fn destination ->
+      Move.single_touch(Piece.new(:knight, player), source, destination, traverses: false)
+    end)
+  end
+
   defp possible_knight_sources(player, destination) do
+    knight_movements(destination)
+    |> Enum.map(fn source ->
+      Move.single_touch(Piece.new(:knight, player), source, destination, traverses: false)
+    end)
+  end
+
+  defp knight_movements(around) do
     [
-      destination |> Square.up(2) |> Square.right(),
-      destination |> Square.up(2) |> Square.left(),
-      destination |> Square.right(2) |> Square.up(),
-      destination |> Square.right(2) |> Square.down(),
-      destination |> Square.down(2) |> Square.right(),
-      destination |> Square.down(2) |> Square.left(),
-      destination |> Square.left(2) |> Square.up(),
-      destination |> Square.left(2) |> Square.down()
+      around |> Square.up(2) |> Square.right(),
+      around |> Square.up(2) |> Square.left(),
+      around |> Square.right(2) |> Square.up(),
+      around |> Square.right(2) |> Square.down(),
+      around |> Square.down(2) |> Square.right(),
+      around |> Square.down(2) |> Square.left(),
+      around |> Square.left(2) |> Square.up(),
+      around |> Square.left(2) |> Square.down()
     ]
     |> Enum.filter(fn source ->
       Square.within?(source, 1..8, 1..8)
-    end)
-    |> Enum.map(fn source ->
-      Move.single_touch(Piece.new(:knight, player), source, destination, traverses: false)
     end)
   end
 end

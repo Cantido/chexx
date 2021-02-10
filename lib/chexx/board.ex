@@ -96,6 +96,13 @@ defmodule Chexx.Board do
         is_nil(piece_at(board, traversed_square))
       end)
 
+    destination_clear? =
+      Enum.all?(move.movements, fn %{destination: dest} ->
+        landing_piece = piece_at(board, dest)
+
+        is_nil(landing_piece) or move.captures == dest
+      end)
+
     capture = Map.get(move, :capture, :forbidden)
     captured_square = Map.get(move, :captures)
     captured_piece = piece_at(board, captured_square)
@@ -107,7 +114,7 @@ defmodule Chexx.Board do
         _ -> is_nil(captured_piece)
       end
 
-    all_touches_present? and path_clear? and capture_valid?
+    all_touches_present? and path_clear? and capture_valid? and destination_clear?
   end
 
   def move(%__MODULE__{} = board, %Move{} = move) do

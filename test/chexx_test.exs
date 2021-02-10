@@ -880,4 +880,15 @@ defmodule ChexxTest do
 
     assert game.status == :black_wins
   end
+
+  test "fool's mate" do
+    game =
+      Chexx.new()
+      |> Chexx.moves([
+          "f3", "e5",
+          "g4", "Qh4#"
+      ])
+
+    assert game.status == :black_wins
+  end
 end
