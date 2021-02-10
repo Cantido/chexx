@@ -20,7 +20,6 @@ defmodule Chexx do
     status: :in_progress
   ]
 
-  # TODO: validate when the check or checkmate symbol appears
   # TODO: don't let a piece move to its own position, i.e. not actually move
 
   def new do
