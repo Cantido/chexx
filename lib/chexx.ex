@@ -179,7 +179,6 @@ defmodule Chexx do
       raise "No valid moves found for #{by}. on this board: \n#{inspect(game.board)}\n"
     end
 
-
     possible_moves_count = Enum.count(moves)
     if possible_moves_count > 1 do
       raise "Ambiguous move: notation can mean #{possible_moves_count} possible moves: #{inspect moves}"
