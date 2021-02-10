@@ -97,6 +97,12 @@ defmodule Chexx do
     end)
   end
 
+  def turns(game, turns) when is_list(turns) do
+    Enum.reduce(turns, game, fn turn, game ->
+      moves(game, String.split(turn))
+    end)
+  end
+
   def resign(game) do
     status =
       case game.current_player do
