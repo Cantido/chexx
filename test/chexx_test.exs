@@ -691,10 +691,9 @@ defmodule ChexxTest do
   describe "queen moves" do
     property "can move any direction, any distance" do
       check all color <- color(),
-                start <- square(),
+                start <- square(2..7, 2..7),
                 direction <- direction(),
                 max_distance = max_distance(start, direction),
-                max_distance > 0,
                 distance <- integer(1..max_distance) do
 
         destination = Square.move_direction(start, direction, distance)
@@ -738,10 +737,9 @@ defmodule ChexxTest do
   describe "bishop moves" do
     property "can move diagonally, any distance" do
       check all color <- color(),
-                start <- square(),
+                start <- square(2..7, 2..7),
                 direction <- member_of([:up_right, :down_right, :down_left, :up_left]),
                 max_distance = max_distance(start, direction),
-                max_distance > 0,
                 distance <- integer(1..max_distance) do
 
         destination = Square.move_direction(start, direction, distance)
@@ -798,9 +796,8 @@ defmodule ChexxTest do
   describe "knight moves" do
     property "can move any direction in the weird way knights do" do
       check all color <- color(),
-                start <- square(),
-                destination <- member_of(knight_moves_from(start)),
-                Square.within?(destination, 1..8, 1..8) do
+                start <- square(3..6, 3..6),
+                destination <- member_of(knight_moves_from(start)) do
 
         piece_at_dest =
           Board.new()
