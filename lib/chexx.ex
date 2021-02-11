@@ -487,42 +487,59 @@ defmodule Chexx do
         :black -> 4
       end
 
+    moves =
+      if Square.rank(source) == en_passant_capture_rank do
+        forward_moves ++ capture_moves ++ en_passant_moves
+      else
+        forward_moves ++ capture_moves
+      end
 
-    if Square.rank(source) == en_passant_capture_rank do
-      forward_moves ++ capture_moves ++ en_passant_moves
-    else
-      forward_moves ++ capture_moves
-    end
+    moves
+    |> Enum.flat_map(fn move ->
+      upgrade_move_to_pawn_promotions(move)
+    end)
   end
 
   defp possible_pawn_sources(player, destination) do
-    sources =
+    moves =
       possible_pawn_captures(player, destination) ++ possible_pawn_advances(player, destination)
 
-    can_promote? =
-      case {player, Square.rank(destination)} do
-        {:white, 8} -> true
-        {:white, _} -> false
-        {:black, 1} -> true
-        {:black, _} -> false
+    Enum.flat_map(moves, fn move ->
+      upgrade_move_to_pawn_promotions(move)
+    end)
+  end
+
+  defp upgrade_move_to_pawn_promotions(move) do
+    if [touch] = move.movements do
+      if touch.piece.type == :pawn do
+        can_promote? =
+          case {touch.piece.color, Square.rank(touch.destination)} do
+            {:white, 8} -> true
+            {:white, _} -> false
+            {:black, 1} -> true
+            {:black, _} -> false
+          end
+
+        if can_promote? do
+          promotions =
+            Enum.map([:queen, :rook, :bishop, :knight], fn piece_type ->
+              %Promotion{
+                source: touch.destination,
+                promoted_to: Piece.new(piece_type, touch.piece.color)
+              }
+            end)
+
+          Enum.map(promotions, fn promotion ->
+            %{move | movements: move.movements ++ [promotion]}
+          end)
+        else
+          [move]
+        end
+      else
+        [move]
       end
-
-    if can_promote? do
-      promotions =
-        Enum.map([:queen, :rook, :bishop, :knight], fn piece_type ->
-          %Promotion{
-            source: destination,
-            promoted_to: Piece.new(piece_type, player)
-          }
-        end)
-
-      Enum.flat_map(sources, fn source ->
-        Enum.map(promotions, fn promotion ->
-          %{source | movements: source.movements ++ [promotion]}
-        end)
-      end)
     else
-      sources
+      [move]
     end
   end
 
