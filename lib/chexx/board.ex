@@ -9,6 +9,7 @@ defmodule Chexx.Board do
   alias Chexx.Piece
   alias Chexx.Move
   alias Chexx.Touch
+  alias Chexx.Promotion
   alias Chexx.Color
 
   import Chexx.Color
@@ -27,7 +28,7 @@ defmodule Chexx.Board do
     put_piece(board, type, color, Square.new(file, rank))
   end
 
-  def put_piece(%__MODULE__{} = board, type, color, %Square{} = square) when is_piece(type) and is_color(color) do
+  def put_piece(%__MODULE__{} = board, type, color, %Square{} = square)  when is_piece(type) and is_color(color) do
     square = Square.new(square)
 
     if piece = piece_at(board, square) do
@@ -85,10 +86,13 @@ defmodule Chexx.Board do
 
   def valid_move?(%__MODULE__{} = board, by, %Move{} = move) do
     all_touches_present? =
-      Enum.all?(move.movements, fn %{source: src, piece: expected_piece} ->
-        actual_piece = piece_at(board, src)
-
-        expected_piece.color == by and expected_piece == actual_piece
+      Enum.all?(move.movements, fn movement ->
+        case movement do
+          %Touch{source: src, piece: expected_piece} ->
+            actual_piece = piece_at(board, src)
+            expected_piece.color == by and expected_piece == actual_piece
+          _ -> true
+        end
       end)
 
     path_clear? =
@@ -97,10 +101,13 @@ defmodule Chexx.Board do
       end)
 
     destination_clear? =
-      Enum.all?(move.movements, fn %{destination: dest} ->
-        landing_piece = piece_at(board, dest)
-
-        is_nil(landing_piece) or move.captures == dest
+      Enum.all?(move.movements, fn movement ->
+          case movement do
+            %Touch{destination: dest} ->
+              landing_piece = piece_at(board, dest)
+              is_nil(landing_piece) or move.captures == dest
+            _ -> true
+          end
       end)
 
     capture = Map.get(move, :capture, :forbidden)
@@ -145,6 +152,23 @@ defmodule Chexx.Board do
     board
     |> delete_piece(touch.source)
     |> put_piece(piece.type, piece.color, touch.destination)
+  end
+
+  defp move_piece(%__MODULE__{} = board, %Promotion{} = promotion) do
+    piece = piece_at(board, promotion.source)
+    promoted_to_piece = promotion.promoted_to
+
+    if is_nil(piece) do
+      raise "No piece at #{inspect promotion.source} to promote."
+    end
+
+    if promoted_to_piece.color != piece.color do
+      raise "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."
+    end
+
+    board
+    |> delete_piece(promotion.source)
+    |> put_piece(promoted_to_piece.type, promoted_to_piece.color, promotion.source)
   end
 
   def to_string(board) do

@@ -2,7 +2,7 @@ defmodule Chexx.AlgebraicNotation do
 
   alias Chexx.Square
 
-  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])(?<check_flag>\+)?(?<checkmate_flag>#)?$/
+  @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])(?<promotion_piece>[QRBN])?(?<check_flag>\+)?(?<checkmate_flag>#)?$/
 
   def parse(notation) do
     case notation do
@@ -65,6 +65,15 @@ defmodule Chexx.AlgebraicNotation do
         true -> :none
       end
 
+    promoted_to =
+      case Map.get(captures, "promotion_piece") do
+        "Q" -> :queen
+        "B" -> :bishop
+        "N" -> :knight
+        "R" -> :rook
+        "" -> nil
+      end
+
     %{
       move_type: :regular,
       piece_type: moved_piece,
@@ -72,7 +81,8 @@ defmodule Chexx.AlgebraicNotation do
       source_rank: source_rank,
       destination: Square.new(dest_file, dest_rank),
       capture: capture_type,
-      check_status: check
+      check_status: check,
+      promoted_to: promoted_to
     }
   end
 end

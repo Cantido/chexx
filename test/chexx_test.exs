@@ -121,7 +121,7 @@ defmodule ChexxTest do
 
   describe "pawn moves" do
     property "can move a pawn up one square" do
-      check all destination <- square(1..8, 2..8) do
+      check all destination <- square(1..8, 2..7) do
         start_square = Square.down(destination)
 
         move = Square.to_algebraic(destination)
@@ -140,7 +140,7 @@ defmodule ChexxTest do
     end
 
     property "can move a black pawn down one square" do
-      check all dest_square <- square(1..8, 1..7) do
+      check all dest_square <- square(1..8, 2..7) do
         start_square = Square.up(dest_square)
 
         move = Square.to_algebraic(dest_square)
@@ -345,6 +345,20 @@ defmodule ChexxTest do
       assert white_pawn.color == :black
 
       assert is_nil(Chexx.piece_at(board, {:e, 4})), "Pawn was not captured in an en passant capture."
+    end
+
+    test "pawn promotion" do
+      promoted_queen =
+        Board.new()
+        |> Board.put_piece(:king, :white, :e, 1)
+        |> Board.put_piece(:king, :black, :e, 8)
+        |> Board.put_piece(:pawn, :white, :c, 7)
+        |> Chexx.new(:white)
+        |> Chexx.move("c8Q+")
+        |> Chexx.piece_at(:c, 8)
+
+      assert promoted_queen.type == :queen
+      assert promoted_queen.color == :white
     end
   end
 

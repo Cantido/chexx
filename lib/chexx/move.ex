@@ -53,4 +53,10 @@ defmodule Chexx.Move do
       traverses: traverses
     }
   end
+
+  def any_promotions?(move) do
+    Enum.any?(move.movements, fn movement ->
+      movement.__struct__ == Chexx.Promotion
+    end)
+  end
 end

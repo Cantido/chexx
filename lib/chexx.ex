@@ -10,6 +10,7 @@ defmodule Chexx do
   alias Chexx.Piece
   alias Chexx.Move
   alias Chexx.Touch
+  alias Chexx.Promotion
 
   import Chexx.Color
 
@@ -216,11 +217,26 @@ defmodule Chexx do
         true
       end
     end)
+    |> Enum.filter(fn possible_move ->
+      if is_nil(parsed_notation[:promoted_to]) do
+        not Move.any_promotions?(possible_move)
+      else
+        Enum.any?(possible_move.movements, fn movement ->
+          case movement do
+            %Promotion{} ->
+              movement.promoted_to.type == parsed_notation[:promoted_to]
+            _ -> false
+          end
+        end)
+      end
+    end)
     |> Enum.reject(fn possible_move ->
       board = Board.move(game.board, possible_move)
       king_in_check?(%{game | board: board}, by)
     end)
   end
+
+  require Logger
 
   defp xor(true, true), do: false
   defp xor(true, false), do: true
@@ -479,8 +495,35 @@ defmodule Chexx do
     end
   end
 
-  defp possible_pawn_sources(by, destination) do
-    possible_pawn_captures(by, destination) ++ possible_pawn_advances(by, destination)
+  defp possible_pawn_sources(player, destination) do
+    sources =
+      possible_pawn_captures(player, destination) ++ possible_pawn_advances(player, destination)
+
+    can_promote? =
+      case {player, Square.rank(destination)} do
+        {:white, 8} -> true
+        {:white, _} -> false
+        {:black, 1} -> true
+        {:black, _} -> false
+      end
+
+    if can_promote? do
+      promotions =
+        Enum.map([:queen, :rook, :bishop, :knight], fn piece_type ->
+          %Promotion{
+            source: destination,
+            promoted_to: Piece.new(piece_type, player)
+          }
+        end)
+
+      Enum.flat_map(sources, fn source ->
+        Enum.map(promotions, fn promotion ->
+          %{source | movements: source.movements ++ [promotion]}
+        end)
+      end)
+    else
+      sources
+    end
   end
 
   defp possible_pawn_captures(player, destination) do
