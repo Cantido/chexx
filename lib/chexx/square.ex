@@ -1,5 +1,5 @@
 defmodule Chexx.Square do
-  defguard is_file(file) when file in 1..8 or file in [:a, :b, :c, :d, :e, :f, :g, :h]
+  defguard is_file(file) when file in 1..8
   defguard is_rank(rank) when rank in 1..8
 
   @enforce_keys [
@@ -101,6 +101,9 @@ defmodule Chexx.Square do
     |> left(distance)
   end
 
+  @spec file_to_number(atom | pos_integer) :: pos_integer
+  defp file_to_number(file)
+
   defp file_to_number(:a), do: 1
   defp file_to_number(:b), do: 2
   defp file_to_number(:c), do: 3
@@ -109,15 +112,6 @@ defmodule Chexx.Square do
   defp file_to_number(:f), do: 6
   defp file_to_number(:g), do: 7
   defp file_to_number(:h), do: 8
-
-  defp file_to_number(1), do: 1
-  defp file_to_number(2), do: 2
-  defp file_to_number(3), do: 3
-  defp file_to_number(4), do: 4
-  defp file_to_number(5), do: 5
-  defp file_to_number(6), do: 6
-  defp file_to_number(7), do: 7
-  defp file_to_number(8), do: 8
 
   defp number_to_file(1), do: :a
   defp number_to_file(2), do: :b

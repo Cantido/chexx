@@ -169,8 +169,6 @@ defmodule Chexx do
     end
   end
 
-  require Logger
-
   defp disambiguate_moves(moves, game, by, parsed_notation) do
     moves
     |> Enum.filter(&Board.valid_move?(game.board, by, &1))
@@ -236,8 +234,6 @@ defmodule Chexx do
     end)
   end
 
-  require Logger
-
   defp xor(true, true), do: false
   defp xor(true, false), do: true
   defp xor(false, true), do: true
@@ -270,8 +266,6 @@ defmodule Chexx do
 
     Enum.count(possible_king_captures) > 0
   end
-
-  require Logger
 
   defp checkmate?(game, player_checkmated) do
     regular_moves =
