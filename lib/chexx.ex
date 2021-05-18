@@ -504,7 +504,8 @@ defmodule Chexx do
   end
 
   defp upgrade_move_to_pawn_promotions(move) do
-    if [touch] = move.movements do
+    if Enum.count(move.movements) == 1 do
+      [touch] = move.movements
       if touch.piece.type == :pawn do
         can_promote? =
           case {touch.piece.color, Square.rank(touch.destination)} do
