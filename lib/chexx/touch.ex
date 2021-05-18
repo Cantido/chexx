@@ -7,6 +7,12 @@ defmodule Chexx.Touch do
   alias Chexx.Square
   alias Chexx.Piece
 
+  @type t() :: %__MODULE__{
+    source: Chexx.Square.t(),
+    destination: Chexx.Square.t(),
+    piece: Chexx.Piece.t()
+  }
+
   @enforce_keys [
     :source,
     :destination,
@@ -18,6 +24,7 @@ defmodule Chexx.Touch do
     :piece
   ]
 
+  @spec new(Chexx.Square.t(), Chexx.Square.t(), Chexx.Piece.t()) :: t()
   def new(%Square{} = source, %Square{} = destination, %Piece{} = piece) do
     %__MODULE__{
       source: source,
@@ -26,6 +33,7 @@ defmodule Chexx.Touch do
     }
   end
 
+  @spec new(%{source: Chexx.Square.t(), destination: Chexx.Square.t(), piece: Chexx.Piece.t()}) :: t()
   def new(map) when is_map(map) do
     params = Map.take(map, [
       :source,

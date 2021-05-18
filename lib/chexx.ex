@@ -21,8 +21,20 @@ defmodule Chexx do
     status: :in_progress
   ]
 
+  @type parsed_notation() :: map()
+  @type move() :: String.t()
+  @type turn() :: String.t()
+  @type match_status() :: :in_progress | :white_wins | :black_wins | :draw
+  @type t() :: %__MODULE__{
+    history: [String.t()],
+    current_player: Chexx.Color.t(),
+    board: Chexx.Board.t(),
+    status: match_status()
+  }
+
   # TODO: don't let a piece move to its own position, i.e. not actually move
 
+  @spec new() :: t()
   def new do
     Board.new()
     |> Board.put_piece(:pawn, :white, :a, 2)
@@ -63,46 +75,55 @@ defmodule Chexx do
     |> new()
   end
 
+  @spec new(Chexx.Board.t()) :: t()
   def new(%Board{} = board) do
     %__MODULE__{board: board}
   end
 
+  @spec new(Chexx.Board.t(), Chexx.Color.t()) :: t()
   def new(%Board{} = board, color) when is_color(color) do
     %__MODULE__{board: board, current_player: color}
   end
 
+  @spec piece_at(t(), Chexx.Square.t() | {Chexx.Square.file(), Chexx.Square.rank()} | {Chexx.Square.file_letter(), Chexx.Square.rank()}) :: Chexx.Piece.t()
   def piece_at(game, square) do
     Board.piece_at(game.board, Square.new(square))
   end
 
+  @spec piece_at(t(), Chexx.Square.file() | Chexx.Square.file_letter(), Chexx.Square.rank()) :: Chexx.Piece.t()
   def piece_at(game, file, rank) do
     Board.piece_at(game.board, Square.new(file, rank))
   end
 
+  @spec put_move(t(), String.t()) :: t()
   defp put_move(game, move) do
     Map.update!(game, :history, fn history ->
       [move | history]
     end)
   end
 
+  @spec turn(t(), move(), move()) :: t()
   def turn(game, move1, move2) do
     game
     |> move(move1)
     |> move(move2)
   end
 
+  @spec moves(t(), [move()]) :: t()
   def moves(game, moves) when is_list(moves) do
     Enum.reduce(moves, game, fn move, game ->
       move(game, move)
     end)
   end
 
+  @spec turns(t(), [turn()]) :: t()
   def turns(game, turns) when is_list(turns) do
     Enum.reduce(turns, game, fn turn, game ->
       moves(game, String.split(turn))
     end)
   end
 
+  @spec resign(t()) :: t()
   def resign(game) do
     status =
       case game.current_player do
@@ -113,6 +134,7 @@ defmodule Chexx do
     %{game | status: status}
   end
 
+  @spec move(t(), move()) :: t()
   def move(game, notation) do
     unless game.status == :in_progress do
       raise "Game ended, status: #{game.status}"
@@ -153,6 +175,7 @@ defmodule Chexx do
     %{game | board: board, current_player: opponent, status: game_status}
   end
 
+  @spec possible_moves(parsed_notation(), Chexx.Color.t()) :: [Chexx.Move.t()]
   defp possible_moves(notation, player) do
     case notation.move_type do
       :kingside_castle -> kingside_castle(player)

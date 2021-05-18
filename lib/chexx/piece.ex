@@ -5,6 +5,12 @@ defmodule Chexx.Piece do
 
   import Chexx.Color
 
+  @type piece() :: :king | :queen | :rook | :bishop | :knight | :pawn
+  @type t() :: %__MODULE__{
+    type: piece(),
+    color: Chexx.Color.t()
+  }
+
   defguard is_piece(piece) when
     piece == :king or
     piece == :queen or
@@ -22,10 +28,12 @@ defmodule Chexx.Piece do
     :color
   ]
 
+  @spec new(piece(), Chexx.Color.t()) :: t()
   def new(type, color) when is_piece(type) and is_color(color) do
     %__MODULE__{type: type, color: color}
   end
 
+  @spec to_unicode(t()) :: String.t()
   def to_unicode(%__MODULE__{type: type, color: color}) do
     case {color, type} do
       {:white, :king} -> "♔"

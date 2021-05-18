@@ -16,18 +16,31 @@ defmodule Chexx.Board do
   import Chexx.Piece, only: [is_piece: 1]
   import Chexx.Square, only: [is_rank: 1, is_file: 1]
 
+  @type occupied_position() :: %{
+    piece: Chexx.Piece.t(),
+    square: Chexx.Square.t()
+  }
+
+  @type t() :: %__MODULE__{
+    occupied_positions: [occupied_position()]
+  }
+
   defstruct [
     occupied_positions: []
   ]
 
+  @spec new() :: t()
   def new do
     %__MODULE__{}
   end
 
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file(), Chexx.Square.rank()) :: t()
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: t()
   def put_piece(%__MODULE__{} = board, type, color, file, rank) when is_piece(type) and is_color(color) do
     put_piece(board, type, color, Square.new(file, rank))
   end
 
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: t()
   def put_piece(%__MODULE__{} = board, type, color, %Square{} = square)  when is_piece(type) and is_color(color) do
     square = Square.new(square)
 
@@ -43,6 +56,9 @@ defmodule Chexx.Board do
     %{board | occupied_positions: occupied_positions}
   end
 
+  @spec delete_piece(t(), Chexx.Square.t()) :: t()
+  def delete_piece(board, square)
+
   def delete_piece(%__MODULE__{} = board, nil), do: board
 
   def delete_piece(%__MODULE__{} = board, %Square{} = square) do
@@ -53,10 +69,14 @@ defmodule Chexx.Board do
     end)
   end
 
+  @spec is_valid_square({Chexx.Square.file(), Chexx.Square.rank()}) :: boolean
+  @spec is_valid_square(Chexx.Square.t()) :: boolean
+
   def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(_), do: false
 
+  @spec piece_at(t(), Chexx.Square.file(), Chexx.Square.rank()) :: Chexx.Piece.t()
   def piece_at(%__MODULE__{} = board, file, row) do
     piece_at(board, Square.new(file, row))
   end
@@ -74,6 +94,7 @@ defmodule Chexx.Board do
     end
   end
 
+  @spec find_pieces(t(), Chexx.Piece.t()) :: [Chexx.Square.t()]
   def find_pieces(%__MODULE__{} = board, piece) do
     board.occupied_positions
     |> Enum.filter(fn occ_pos ->

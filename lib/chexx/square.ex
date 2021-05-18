@@ -1,4 +1,15 @@
 defmodule Chexx.Square do
+  @type file() :: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+  @type file_letter() :: :a | :b | :c | :d | :e | :f | :g | :h
+  @type rank() :: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+  @type direction() :: :up | :down | :left | :right
+  @type distance() :: pos_integer()
+
+  @type t() :: %__MODULE__{
+    file: file(),
+    rank: rank()
+  }
+
   defguard is_file(file) when file in 1..8
   defguard is_rank(rank) when rank in 1..8
 
@@ -11,43 +22,53 @@ defmodule Chexx.Square do
     :rank
   ]
 
+  @spec new(t()) :: t()
   def new(%__MODULE__{} = square) do
     square
   end
 
+  @spec new({file(), rank()}) :: t()
   def new({file, rank}) do
     new(file, rank)
   end
 
+  @spec new(file(), rank()) :: t()
   def new(file, rank) when is_number(file) and is_number(rank) do
     %__MODULE__{file: file, rank: rank}
   end
 
+  @spec new(file_letter(), rank()) :: t()
   def new(file, rank) when is_atom(file) and is_number(rank) do
     new(file_to_number(file), rank)
   end
 
+  @spec file(t()) :: file_letter()
   def file(%__MODULE__{file: file}) do
     number_to_file(file)
   end
 
+  @spec rank(t()) :: rank()
   def rank(%__MODULE__{rank: rank}) do
     rank
   end
 
+  @spec coords(t()) :: {file(), rank()}
   def coords(%__MODULE__{file: file, rank: rank}) do
     {file, rank}
   end
 
+  @spec to_algebraic(t()) :: String.t()
   def to_algebraic(%__MODULE__{} = square) do
     {file, rank} = coords(square)
     "#{number_to_file(file)}#{rank}"
   end
 
+  @spec within?(t(), Range.t(), Range.t()) :: boolean()
   def within?(%__MODULE__{file: source_file, rank: source_rank}, file_range, rank_range) do
     source_rank in rank_range and source_file in file_range
   end
 
+  @spec move_direction(t(), direction(), distance()) :: t()
   def move_direction(%__MODULE__{} = square, direction, distance \\ 1) do
     case direction do
       :up -> up(square, distance)
@@ -61,47 +82,55 @@ defmodule Chexx.Square do
     end
   end
 
+  @spec up(t(), distance()) :: t()
   def up(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
     new(file, rank + squares)
   end
 
+  @spec up_right(t(), distance()) :: t()
   def up_right(%__MODULE__{} = start, distance \\ 1) do
     start
     |> up(distance)
     |> right(distance)
   end
 
+  @spec right(t(), distance()) :: t()
   def right(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
     new(file + squares, rank)
   end
 
+  @spec down_right(t(), distance()) :: t()
   def down_right(%__MODULE__{} = start, distance \\ 1) do
     start
     |> down(distance)
     |> right(distance)
   end
 
+  @spec down(t(), distance()) :: t()
   def down(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
     new(file, rank - squares)
   end
 
+  @spec down_left(t(), distance()) :: t()
   def down_left(%__MODULE__{} = start, distance \\ 1) do
     start
     |> down(distance)
     |> left(distance)
   end
 
+  @spec left(t(), distance()) :: t()
   def left(%__MODULE__{file: file, rank: rank}, squares \\ 1) do
     new(file - squares, rank)
   end
 
+  @spec up_left(t(), distance()) :: t()
   def up_left(%__MODULE__{} = start, distance \\ 1) do
     start
     |> up(distance)
     |> left(distance)
   end
 
-  @spec file_to_number(atom | pos_integer) :: pos_integer
+  @spec file_to_number(file_letter()) :: file()
   defp file_to_number(file)
 
   defp file_to_number(:a), do: 1
@@ -112,6 +141,9 @@ defmodule Chexx.Square do
   defp file_to_number(:f), do: 6
   defp file_to_number(:g), do: 7
   defp file_to_number(:h), do: 8
+
+  @spec number_to_file(file()) :: file_letter()
+  defp number_to_file(file)
 
   defp number_to_file(1), do: :a
   defp number_to_file(2), do: :b
@@ -127,6 +159,7 @@ defmodule Chexx.Square do
   Get the squares in-between two other squares.
   If the squares are not lined up on any axis, then return an empty list.
   """
+  @spec squares_between(t(), t()) :: [t()]
   def squares_between(%__MODULE__{file: src_file, rank: src_rank} = src, %__MODULE__{file: dest_file, rank: dest_rank} = dest) do
     cond do
       src_file == dest_file ->
@@ -154,18 +187,22 @@ defmodule Chexx.Square do
     end
   end
 
+  @spec diagonal_of?(t(), t()) :: boolean
   defp diagonal_of?(%__MODULE__{file: src_file, rank: src_rank}, %__MODULE__{file: dest_file, rank: dest_rank}) do
     abs(src_file - dest_file) == abs(src_rank - dest_rank)
   end
 
+  @spec ranks_between(rank(), rank()) :: Range.t() | []
   defp ranks_between(src_rank, dest_rank) do
     range_between(src_rank, dest_rank)
   end
 
+  @spec files_between(file(), file()) :: Range.t() | []
   defp files_between(src_file, dest_file) do
     range_between(src_file, dest_file)
   end
 
+  @spec range_between(pos, pos) :: Range.t() | [] when pos: file() | rank()
   defp range_between(first, last) do
     min_val = min(first, last)
     max_val = max(first, last)
