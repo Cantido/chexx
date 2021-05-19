@@ -7,8 +7,8 @@ defmodule Chexx.AlgebraicNotation do
   def parse(notation) do
     case notation do
       # TODO: allow castling to mark the check? flag
-      "0-0" -> %{move_type: :kingside_castle, check?: false}
-      "0-0-0" -> %{move_type: :queenside_castle, check?: false}
+      "0-0" -> %{move_type: :kingside_castle, check?: false, notation_source: "0-0"}
+      "0-0-0" -> %{move_type: :queenside_castle, check?: false, notation_source: "0-0-0"}
       notation -> parse_regular_coords(notation)
     end
   end
@@ -82,7 +82,8 @@ defmodule Chexx.AlgebraicNotation do
       destination: Square.new(dest_file, dest_rank),
       capture: capture_type,
       check_status: check,
-      promoted_to: promoted_to
+      promoted_to: promoted_to,
+      notation_source: notation
     }
   end
 end

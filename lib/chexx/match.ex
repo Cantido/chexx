@@ -152,10 +152,14 @@ defmodule Chexx.Match do
 
     move = Enum.at(moves, 0)
 
+    do_move(game, move, parsed_notation)
+  end
+
+  def do_move(%__MODULE__{} = game, %Move{} = move, parsed_notation) do
     board = Board.move(game.board, move)
     opponent = Color.opponent(game.current_player)
 
-    game = put_move(game, notation)
+    game = put_move(game, parsed_notation.notation_source)
 
     game_status =
       if parsed_notation[:check_status] == :checkmate do
