@@ -79,16 +79,6 @@ defmodule Chexx.Match do
     %__MODULE__{board: board, current_player: color}
   end
 
-  @spec piece_at(t(), Chexx.Square.t() | {Chexx.Square.file(), Chexx.Square.rank()} | {Chexx.Square.file_letter(), Chexx.Square.rank()}) :: Chexx.Piece.t()
-  def piece_at(game, square) do
-    Board.piece_at(game.board, Square.new(square))
-  end
-
-  @spec piece_at(t(), Chexx.Square.file() | Chexx.Square.file_letter(), Chexx.Square.rank()) :: Chexx.Piece.t()
-  def piece_at(game, file, rank) do
-    Board.piece_at(game.board, Square.new(file, rank))
-  end
-
   @spec put_move(t(), String.t()) :: t()
   defp put_move(game, move) do
     Map.update!(game, :history, fn history ->

@@ -362,18 +362,18 @@ defmodule ChexxTest do
 
   describe "white kingside castle" do
     test "succeeds when pieces are in the right place" do
-      board =
+      match =
         Board.new()
         |> Board.put_piece(:rook, :white, :h, 1)
         |> Board.put_piece(:king, :white, :e, 1)
         |> Chexx.play_board(:white)
         |> Chexx.move("0-0")
 
-      actual_king = Match.piece_at(board, {:g, 1})
+      actual_king = Board.piece_at(match.board, :g, 1)
       assert actual_king.type == :king
       assert actual_king.color == :white
 
-      actual_rook = Match.piece_at(board, {:f, 1})
+      actual_rook = Board.piece_at(match.board, :f, 1)
       assert actual_rook.type == :rook
       assert actual_rook.color == :white
     end
@@ -467,18 +467,18 @@ defmodule ChexxTest do
 
   describe "black kingside castle" do
     test "succeeds when pieces are in the right place" do
-      board =
+      match =
         Board.new()
         |> Board.put_piece(:rook, :black, :h, 8)
         |> Board.put_piece(:king, :black, :e, 8)
         |> Chexx.play_board(:black)
         |> Chexx.move("0-0")
 
-      actual_king = Match.piece_at(board, {:g, 8})
+      actual_king = Board.piece_at(match.board, :g, 8)
       assert actual_king.type == :king
       assert actual_king.color == :black
 
-      actual_rook = Match.piece_at(board, {:f, 8})
+      actual_rook = Board.piece_at(match.board, :f, 8)
       assert actual_rook.type == :rook
       assert actual_rook.color == :black
     end
@@ -546,18 +546,18 @@ defmodule ChexxTest do
 
   describe "white queenside castle" do
     test "succeeds when pieces are in the right place" do
-      board =
+      match =
         Board.new()
         |> Board.put_piece(:king, :white, :e, 1)
         |> Board.put_piece(:rook, :white, :a, 1)
         |> Chexx.play_board(:white)
         |> Chexx.move("0-0-0")
 
-      actual_king = Match.piece_at(board, {:c, 1})
+      actual_king = Board.piece_at(match.board, :c, 1)
       assert actual_king.type == :king
       assert actual_king.color == :white
 
-      actual_rook = Match.piece_at(board, {:d, 1})
+      actual_rook = Board.piece_at(match.board, :d, 1)
       assert actual_rook.type == :rook
       assert actual_rook.color == :white
     end
@@ -602,18 +602,18 @@ defmodule ChexxTest do
 
   describe "black queenside castle" do
     test "succeeds when pieces are in the right place" do
-      board =
+      match =
         Board.new()
         |> Board.put_piece(:king, :black, :e, 8)
         |> Board.put_piece(:rook, :black, :a, 8)
         |> Chexx.play_board(:black)
         |> Chexx.move("0-0-0")
 
-      actual_king = Match.piece_at(board, {:c, 8})
+      actual_king = Board.piece_at(match.board, :c, 8)
       assert actual_king.type == :king
       assert actual_king.color == :black
 
-      actual_rook = Match.piece_at(board, {:d, 8})
+      actual_rook = Board.piece_at(match.board, :d, 8)
       assert actual_rook.type == :rook
       assert actual_rook.color == :black
     end
