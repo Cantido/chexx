@@ -152,10 +152,10 @@ defmodule Chexx.Match do
 
     move = Enum.at(moves, 0)
 
-    do_move(game, move, parsed_notation)
+    do_move(game, move)
   end
 
-  def do_move(%__MODULE__{} = game, %Move{} = move, parsed_notation) do
+  def do_move(%__MODULE__{} = game, %Move{} = move) do
     game =
       game
       |> Map.update!(:board, &Board.move(&1, move))
