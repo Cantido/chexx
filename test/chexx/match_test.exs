@@ -389,7 +389,7 @@ defmodule Chexx.MatchTest do
         Board.new()
         |> Board.put_piece(:king, :white, :e, 1)
         |> Board.put_piece(:king, :black, :e, 8)
-        |> Board.put_piece(:rook, :white, :h, 2)
+        |> Board.put_piece(:rook, :white, :h, 1)
         |> Match.new(:white)
         |> Match.move("Rh1")
         |> Match.move("Ke7")
@@ -558,7 +558,7 @@ defmodule Chexx.MatchTest do
     test "can't castle if the king has moved before" do
       assert_raise RuntimeError, fn ->
         Board.new()
-        |> Board.put_piece(:king, :white, :e, 2)
+        |> Board.put_piece(:king, :white, :e, 1)
         |> Board.put_piece(:rook, :white, :a, 1)
         |> Board.put_piece(:king, :black, :e, 8)
         |> Match.new(:white)
@@ -572,7 +572,7 @@ defmodule Chexx.MatchTest do
       assert_raise RuntimeError, fn ->
         Board.new()
         |> Board.put_piece(:king, :white, :e, 1)
-        |> Board.put_piece(:rook, :white, :a, 2)
+        |> Board.put_piece(:rook, :white, :a, 1)
         |> Board.put_piece(:king, :black, :e, 8)
         |> Match.new(:white)
         |> Match.move("Ra1")

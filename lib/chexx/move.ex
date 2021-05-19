@@ -105,24 +105,19 @@ defmodule Chexx.Move do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          forbidden_string =
-            case by do
-              :white -> "Ke1"
-              :black -> "Ke8"
-            end
-
-          String.starts_with?(move, forbidden_string)
+          Enum.any?(move.movements, &Piece.equals?(&1.piece, by, :king))
         end)
 
       rook_moved_before? =
         Enum.any?(history, fn move ->
-          forbidden_string =
-            case by do
-              :white -> "Rh1"
-              :black -> "Rh8"
-            end
-
-          String.starts_with?(move, forbidden_string)
+          Enum.any?(move.movements, fn movement ->
+            rook_start_rank =
+              case by do
+                :white -> 1
+                :black -> 8
+              end
+            Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 8, rook_start_rank)
+          end)
         end)
 
       not king_moved_before? and not rook_moved_before?
@@ -166,24 +161,19 @@ defmodule Chexx.Move do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          forbidden_string =
-            case by do
-              :white -> "Ke1"
-              :black -> "Ke8"
-            end
-
-          String.starts_with?(move, forbidden_string)
+          Enum.any?(move.movements, &Piece.equals?(&1.piece, by, :king))
         end)
 
       rook_moved_before? =
         Enum.any?(history, fn move ->
-          forbidden_string =
-            case by do
-              :white -> "Ra1"
-              :black -> "Ra8"
-            end
-
-          String.starts_with?(move, forbidden_string)
+          Enum.any?(move.movements, fn movement ->
+            rook_start_rank =
+              case by do
+                :white -> 1
+                :black -> 8
+              end
+            Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 1, rook_start_rank)
+          end)
         end)
 
       not king_moved_before? and not rook_moved_before?
@@ -344,8 +334,13 @@ defmodule Chexx.Move do
 
     # Most recent move was to current pos
     required_history_fn = fn history ->
-      captured_pawn_last_moved_to_this_square? =
-        Enum.at(history, 0) == Square.to_algebraic(ep_captured_square)
+      last_move_destination =
+        Enum.at(history, 0)
+        |> Map.get(:movements)
+        |> Enum.at(0)
+        |> Map.get(:destination)
+
+      captured_pawn_last_moved_to_this_square? = last_move_destination == ep_captured_square
 
       # captured pawn's previous move was two squares
       captured_pawn_didnt_move_previously? =
@@ -356,7 +351,7 @@ defmodule Chexx.Move do
               :white -> Square.down(ep_captured_square)
               :black -> Square.up(ep_captured_square)
             end
-          move != Square.to_algebraic(forbidden_square)
+          not Square.equals?(Enum.at(move.movements, 0).destination, forbidden_square)
         end)
 
       captured_pawn_last_moved_to_this_square? and

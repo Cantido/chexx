@@ -159,7 +159,7 @@ defmodule Chexx.Match do
     game =
       game
       |> Map.update!(:board, &Board.move(&1, move))
-      |> put_move(parsed_notation.notation_source)
+      |> put_move(move)
       |> update_status()
 
     opponent = Color.opponent(game.current_player)

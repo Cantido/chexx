@@ -51,6 +51,10 @@ defmodule Chexx.Piece do
     end
   end
 
+  def equals?(%__MODULE__{type: piece_type, color: piece_color}, color, type) do
+    piece_type == type and piece_color == color
+  end
+
   defimpl Inspect, for: __MODULE__ do
     def inspect(piece, _opts) do
       Chexx.Piece.to_unicode(piece)
