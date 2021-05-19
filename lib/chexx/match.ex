@@ -156,13 +156,20 @@ defmodule Chexx.Match do
   end
 
   def do_move(%__MODULE__{} = game, %Move{} = move, parsed_notation) do
-    board = Board.move(game.board, move)
+    game =
+      game
+      |> Map.update!(:board, &Board.move(&1, move))
+      |> put_move(parsed_notation.notation_source)
+      |> update_status()
+
     opponent = Color.opponent(game.current_player)
 
-    game = put_move(game, parsed_notation.notation_source)
+    %{game | current_player: opponent}
+  end
 
-    game_status =
-      if parsed_notation[:check_status] == :checkmate do
+  defp update_status(game) do
+    status =
+      if checkmate?(game, Color.opponent(game.current_player)) do
         case game.current_player do
           :white -> :white_wins
           :black -> :black_wins
@@ -170,8 +177,7 @@ defmodule Chexx.Match do
       else
         game.status
       end
-
-    %{game | board: board, current_player: opponent, status: game_status}
+    %{game | status: status}
   end
 
   defp disambiguate_moves(moves, game, by, parsed_notation) do
