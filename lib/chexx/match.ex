@@ -1,6 +1,5 @@
 defmodule Chexx.Match do
   alias Chexx.Color
-  alias Chexx.Square
   alias Chexx.Board
   alias Chexx.Piece
   alias Chexx.Move
@@ -161,7 +160,7 @@ defmodule Chexx.Match do
       if not is_nil(parsed_notation[:source_file]) do
         if parsed_notation.move_type == :regular do
           [touch] = possible_move.movements
-          parsed_notation.source_file == Square.file(touch.source)
+          parsed_notation.source_file == touch.source.file
         else
           true
         end

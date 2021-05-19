@@ -239,7 +239,7 @@ defmodule Chexx.Move do
     forward_moves = [single_touch(piece, source, Square.move_direction(source, advance_direction, 1), capture: :forbidden)]
 
     forward_moves =
-      if Square.rank(source) == start_rank do
+      if source.rank == start_rank do
         move = single_touch(piece, source, Square.move_direction(source, advance_direction, 2), capture: :forbidden)
         [move | forward_moves]
       else
@@ -266,7 +266,7 @@ defmodule Chexx.Move do
       end
 
     moves =
-      if Square.rank(source) == en_passant_capture_rank do
+      if source.rank == en_passant_capture_rank do
         forward_moves ++ capture_moves ++ en_passant_moves
       else
         forward_moves ++ capture_moves
@@ -292,7 +292,7 @@ defmodule Chexx.Move do
       [touch] = move.movements
       if touch.piece.type == :pawn do
         can_promote? =
-          case {touch.piece.color, Square.rank(touch.destination)} do
+          case {touch.piece.color, touch.destination.rank} do
             {:white, 8} -> true
             {:white, _} -> false
             {:black, 1} -> true
@@ -395,7 +395,7 @@ defmodule Chexx.Move do
   end
 
   defp possible_pawn_advances(player, destination) do
-    rank = Square.rank(destination)
+    rank = destination.rank
 
     can_move_two? =
       case {player, rank} do

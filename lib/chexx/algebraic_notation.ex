@@ -40,6 +40,7 @@ defmodule Chexx.AlgebraicNotation do
         nil
       else
         String.to_existing_atom(source_file_notation)
+        |> Square.file_to_number()
       end
 
     source_rank_notation = Map.get(captures, "source_rank")

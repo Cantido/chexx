@@ -42,16 +42,6 @@ defmodule Chexx.Square do
     new(file_to_number(file), rank)
   end
 
-  @spec file(t()) :: file_letter()
-  def file(%__MODULE__{file: file}) do
-    number_to_file(file)
-  end
-
-  @spec rank(t()) :: rank()
-  def rank(%__MODULE__{rank: rank}) do
-    rank
-  end
-
   @spec coords(t()) :: {file(), rank()}
   def coords(%__MODULE__{file: file, rank: rank}) do
     {file, rank}
@@ -139,16 +129,16 @@ defmodule Chexx.Square do
   end
 
   @spec file_to_number(file_letter()) :: file()
-  defp file_to_number(file)
+  def file_to_number(file)
 
-  defp file_to_number(:a), do: 1
-  defp file_to_number(:b), do: 2
-  defp file_to_number(:c), do: 3
-  defp file_to_number(:d), do: 4
-  defp file_to_number(:e), do: 5
-  defp file_to_number(:f), do: 6
-  defp file_to_number(:g), do: 7
-  defp file_to_number(:h), do: 8
+  def file_to_number(:a), do: 1
+  def file_to_number(:b), do: 2
+  def file_to_number(:c), do: 3
+  def file_to_number(:d), do: 4
+  def file_to_number(:e), do: 5
+  def file_to_number(:f), do: 6
+  def file_to_number(:g), do: 7
+  def file_to_number(:h), do: 8
 
   @spec number_to_file(file()) :: file_letter()
   defp number_to_file(file)
