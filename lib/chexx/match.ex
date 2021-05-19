@@ -1,5 +1,4 @@
 defmodule Chexx.Match do
-  alias Chexx.AlgebraicNotation
   alias Chexx.Color
   alias Chexx.Square
   alias Chexx.Board
@@ -97,27 +96,6 @@ defmodule Chexx.Match do
     end)
   end
 
-  @spec turn(t(), move(), move()) :: t()
-  def turn(game, move1, move2) do
-    game
-    |> move(move1)
-    |> move(move2)
-  end
-
-  @spec moves(t(), [move()]) :: t()
-  def moves(game, moves) when is_list(moves) do
-    Enum.reduce(moves, game, fn move, game ->
-      move(game, move)
-    end)
-  end
-
-  @spec turns(t(), [turn()]) :: t()
-  def turns(game, turns) when is_list(turns) do
-    Enum.reduce(turns, game, fn turn, game ->
-      moves(game, String.split(turn))
-    end)
-  end
-
   @spec resign(t()) :: t()
   def resign(game) do
     status =
@@ -129,33 +107,8 @@ defmodule Chexx.Match do
     %{game | status: status}
   end
 
-  @spec move(t(), move()) :: t()
-  def move(game, notation) do
-    unless game.status == :in_progress do
-      raise "Game ended, status: #{game.status}"
-    end
-
-    parsed_notation =  AlgebraicNotation.parse(notation)
-    moves =
-      Move.possible_moves(parsed_notation, game.current_player)
-      |> disambiguate_moves(game, game.current_player, parsed_notation)
-
-
-    if Enum.empty?(moves) do
-      raise "No valid moves found for #{game.current_player} matching #{inspect notation}. on this board: \n#{inspect(game.board)}\n"
-    end
-
-    possible_moves_count = Enum.count(moves)
-    if possible_moves_count > 1 do
-      raise "Ambiguous move: notation #{notation} can mean #{possible_moves_count} possible moves: #{inspect moves}"
-    end
-
-    move = Enum.at(moves, 0)
-
-    do_move(game, move)
-  end
-
-  def do_move(%__MODULE__{} = game, %Move{} = move) do
+  @spec move(t(), Chexx.Move.t()) :: t()
+  def move(%__MODULE__{} = game, %Move{} = move) do
     game =
       game
       |> Map.update!(:board, &Board.move(&1, move))
@@ -180,7 +133,7 @@ defmodule Chexx.Match do
     %{game | status: status}
   end
 
-  defp disambiguate_moves(moves, game, by, parsed_notation) do
+  def disambiguate_moves(moves, game, by, parsed_notation) do
     moves
     |> Enum.filter(&Board.valid_move?(game.board, by, &1))
 
