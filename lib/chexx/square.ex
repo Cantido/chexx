@@ -42,11 +42,6 @@ defmodule Chexx.Square do
     new(file_to_number(file), rank)
   end
 
-  @spec coords(t()) :: {file(), rank()}
-  def coords(%__MODULE__{file: file, rank: rank}) do
-    {file, rank}
-  end
-
   def equals?(%__MODULE__{file: square_file, rank: square_rank}, file, rank) do
     square_file == file and square_rank == rank
   end
@@ -57,8 +52,7 @@ defmodule Chexx.Square do
 
   @spec to_algebraic(t()) :: String.t()
   def to_algebraic(%__MODULE__{} = square) do
-    {file, rank} = coords(square)
-    "#{number_to_file(file)}#{rank}"
+    "#{number_to_file(square.file)}#{square.rank}"
   end
 
   @spec within?(t(), Range.t(), Range.t()) :: boolean()

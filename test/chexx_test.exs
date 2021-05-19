@@ -312,15 +312,14 @@ defmodule ChexxTest do
   end
 
   defp max_distance(square, direction) do
-    {start_file, start_rank} = Square.coords(square)
     case direction do
-      :up -> 8 - start_rank
+      :up -> 8 - square.rank
       :up_right -> min(max_distance(square, :up), max_distance(square, :right))
-      :right -> 8 - start_file
+      :right -> 8 - square.file
       :down_right -> min(max_distance(square, :down), max_distance(square, :right))
-      :down -> start_rank - 1
+      :down -> square.rank - 1
       :down_left -> min(max_distance(square, :down), max_distance(square, :left))
-      :left -> start_file - 1
+      :left -> square.file - 1
       :up_left -> min(max_distance(square, :up), max_distance(square, :left))
     end
   end
