@@ -6,8 +6,8 @@ defmodule Chexx.Match do
   alias Chexx.Promotion
 
   import Chexx.Color
-  import OK, only: [~>>: 2]
 
+  @derive {Inspect, only: [:status, :current_player]}
   defstruct [
     history: [],
     current_player: :white,
@@ -30,47 +30,10 @@ defmodule Chexx.Match do
 
   @spec new() :: t()
   def new do
-    completed_board =
-      {:ok, Board.new()}
-      ~>> Board.put_piece(:pawn, :white, :a, 2)
-      ~>> Board.put_piece(:pawn, :white, :b, 2)
-      ~>> Board.put_piece(:pawn, :white, :c, 2)
-      ~>> Board.put_piece(:pawn, :white, :d, 2)
-      ~>> Board.put_piece(:pawn, :white, :e, 2)
-      ~>> Board.put_piece(:pawn, :white, :f, 2)
-      ~>> Board.put_piece(:pawn, :white, :g, 2)
-      ~>> Board.put_piece(:pawn, :white, :h, 2)
-
-      ~>> Board.put_piece(:rook, :white, :a, 1)
-      ~>> Board.put_piece(:knight, :white, :b, 1)
-      ~>> Board.put_piece(:bishop, :white, :c, 1)
-      ~>> Board.put_piece(:queen, :white, :d, 1)
-      ~>> Board.put_piece(:king, :white, :e, 1)
-      ~>> Board.put_piece(:bishop, :white, :f, 1)
-      ~>> Board.put_piece(:knight, :white, :g, 1)
-      ~>> Board.put_piece(:rook, :white, :h, 1)
-
-      ~>> Board.put_piece(:pawn, :black, :a, 7)
-      ~>> Board.put_piece(:pawn, :black, :b, 7)
-      ~>> Board.put_piece(:pawn, :black, :c, 7)
-      ~>> Board.put_piece(:pawn, :black, :d, 7)
-      ~>> Board.put_piece(:pawn, :black, :e, 7)
-      ~>> Board.put_piece(:pawn, :black, :f, 7)
-      ~>> Board.put_piece(:pawn, :black, :g, 7)
-      ~>> Board.put_piece(:pawn, :black, :h, 7)
-
-      ~>> Board.put_piece(:rook, :black, :a, 8)
-      ~>> Board.put_piece(:knight, :black, :b, 8)
-      ~>> Board.put_piece(:bishop, :black, :c, 8)
-      ~>> Board.put_piece(:queen, :black, :d, 8)
-      ~>> Board.put_piece(:king, :black, :e, 8)
-      ~>> Board.put_piece(:bishop, :black, :f, 8)
-      ~>> Board.put_piece(:knight, :black, :g, 8)
-      ~>> Board.put_piece(:rook, :black, :h, 8)
-      ~>> new()
-    case completed_board do
-      {:ok, board} -> board
-      err -> raise "Setting up a board resulted in an error. This is a bug in Chexx. Error: #{inspect err}"
+    new_match = new(Board.standard())
+    case new_match do
+      {:ok, match} -> match
+      err -> raise "Creating a match from a new board caused an error. This is a bug in Chexx. Error: #{inspect err}"
     end
   end
 

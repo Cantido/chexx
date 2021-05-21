@@ -15,6 +15,7 @@ defmodule Chexx.Board do
   import Chexx.Color
   import Chexx.Piece, only: [is_piece: 1]
   import Chexx.Square, only: [is_rank: 1, is_file: 1]
+  import OK, only: [~>>: 2]
 
   @type occupied_position() :: %{
     piece: Chexx.Piece.t(),
@@ -36,6 +37,52 @@ defmodule Chexx.Board do
     %__MODULE__{}
   end
 
+  @spec standard() :: t()
+  def standard do
+    completed_board =
+      {:ok, new()}
+      ~>> put_piece(:pawn, :white, :a, 2)
+      ~>> put_piece(:pawn, :white, :b, 2)
+      ~>> put_piece(:pawn, :white, :c, 2)
+      ~>> put_piece(:pawn, :white, :d, 2)
+      ~>> put_piece(:pawn, :white, :e, 2)
+      ~>> put_piece(:pawn, :white, :f, 2)
+      ~>> put_piece(:pawn, :white, :g, 2)
+      ~>> put_piece(:pawn, :white, :h, 2)
+
+      ~>> put_piece(:rook, :white, :a, 1)
+      ~>> put_piece(:knight, :white, :b, 1)
+      ~>> put_piece(:bishop, :white, :c, 1)
+      ~>> put_piece(:queen, :white, :d, 1)
+      ~>> put_piece(:king, :white, :e, 1)
+      ~>> put_piece(:bishop, :white, :f, 1)
+      ~>> put_piece(:knight, :white, :g, 1)
+      ~>> put_piece(:rook, :white, :h, 1)
+
+      ~>> put_piece(:pawn, :black, :a, 7)
+      ~>> put_piece(:pawn, :black, :b, 7)
+      ~>> put_piece(:pawn, :black, :c, 7)
+      ~>> put_piece(:pawn, :black, :d, 7)
+      ~>> put_piece(:pawn, :black, :e, 7)
+      ~>> put_piece(:pawn, :black, :f, 7)
+      ~>> put_piece(:pawn, :black, :g, 7)
+      ~>> put_piece(:pawn, :black, :h, 7)
+
+      ~>> put_piece(:rook, :black, :a, 8)
+      ~>> put_piece(:knight, :black, :b, 8)
+      ~>> put_piece(:bishop, :black, :c, 8)
+      ~>> put_piece(:queen, :black, :d, 8)
+      ~>> put_piece(:king, :black, :e, 8)
+      ~>> put_piece(:bishop, :black, :f, 8)
+      ~>> put_piece(:knight, :black, :g, 8)
+      ~>> put_piece(:rook, :black, :h, 8)
+
+    case completed_board do
+      {:ok, board} -> board
+      err -> raise "Setting up a board resulted in an error. This is a bug in Chexx. Error: #{inspect err}"
+    end
+  end
+
   @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
   @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
   def put_piece(%__MODULE__{} = board, type, color, file, rank) when is_piece(type) and is_color(color) do
@@ -55,6 +102,9 @@ defmodule Chexx.Board do
         {:ok, %{board | occupied_positions: occupied_positions}}
     end
   end
+
+  @spec delete_piece(t(), Chexx.Square.file(), Chexx.Square.rank()) :: t()
+  def delete_piece(board, file, rank), do: delete_piece(board, Square.new(file, rank))
 
   @spec delete_piece(t(), Chexx.Square.t()) :: t()
   def delete_piece(board, square)
