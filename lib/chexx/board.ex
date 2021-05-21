@@ -34,26 +34,24 @@ defmodule Chexx.Board do
     %__MODULE__{}
   end
 
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file(), Chexx.Square.rank()) :: t()
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: t()
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
   def put_piece(%__MODULE__{} = board, type, color, file, rank) when is_piece(type) and is_color(color) do
     put_piece(board, type, color, Square.new(file, rank))
   end
 
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: t()
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, any()}
   def put_piece(%__MODULE__{} = board, type, color, %Square{} = square)  when is_piece(type) and is_color(color) do
     square = Square.new(square)
+    piece_at_square = piece_at(board, square)
 
-    if piece = piece_at(board, square) do
-      raise "Square #{inspect(square)} square already has piece #{inspect(piece)}."
+    cond do
+      not is_valid_square(square) -> {:error, :invalid_destination}
+      not is_nil(piece_at_square) -> {:error, :square_occupied}
+      true ->
+        occupied_positions = [%{piece: Piece.new(type, color), square: square} | board.occupied_positions]
+        {:ok, %{board | occupied_positions: occupied_positions}}
     end
-
-    if not is_valid_square(square) do
-      raise "Square #{inspect(square)} is not a valid place to put a piece"
-    end
-
-    occupied_positions = [%{piece: Piece.new(type, color), square: square} | board.occupied_positions]
-    %{board | occupied_positions: occupied_positions}
   end
 
   @spec delete_piece(t(), Chexx.Square.t()) :: t()
@@ -145,51 +143,50 @@ defmodule Chexx.Board do
     all_touches_present? and path_clear? and capture_valid? and destination_clear?
   end
 
+  @spec move(t(), Chexx.Move.t()) :: {:ok, t()} | {:error, any()}
   def move(%__MODULE__{} = board, %Move{} = move) do
     captured_square = Map.get(move, :captures)
 
     board = delete_piece(board, captured_square)
 
-    Enum.reduce(move.movements, board, fn touch, board ->
-      move_piece(board, touch)
+    Enum.reduce_while(move.movements, {:ok, board}, fn touch, {:ok, board} ->
+      case move_piece(board, touch) do
+        {:ok, board} -> {:cont, {:ok, board}}
+        err -> {:halt, err}
+      end
     end)
   end
 
-  defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
+  @spec move_piece(t(), Chexx.Touch.t()) :: {:ok, t()} | {:error, any()}
+    defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
     piece = piece_at(board, touch.source)
 
-    if is_nil(piece) do
-      raise "No piece at #{inspect touch.source} to move."
+    cond do
+      is_nil(piece) -> {:error, {:invalid_move, "No piece at #{inspect touch.source} to move."}}
+      touch.piece.type != piece.type -> {:error, {:invalid_move, "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."}}
+      touch.piece.color != piece.color -> {:error, {:invalid_move, "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."}}
+      true ->
+        board
+        |> delete_piece(touch.source)
+        |> put_piece(piece.type, piece.color, touch.destination)
     end
-
-    if touch.piece.type != piece.type do
-      raise "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."
-    end
-
-    if touch.piece.color != piece.color do
-      raise "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."
-    end
-
-    board
-    |> delete_piece(touch.source)
-    |> put_piece(piece.type, piece.color, touch.destination)
   end
-
+  
+  @spec move_piece(t(), Chexx.Promotion.t()) :: {:ok, t()} | {:error, any()}
   defp move_piece(%__MODULE__{} = board, %Promotion{} = promotion) do
     piece = piece_at(board, promotion.source)
     promoted_to_piece = promotion.promoted_to
 
-    if is_nil(piece) do
-      raise "No piece at #{inspect promotion.source} to promote."
+    cond do
+      is_nil(piece) -> {:error, {:invalid_move, "No piece at #{inspect promotion.source} to promote."}}
+      promoted_to_piece.color != piece.color -> {:error, {:invalid_move, "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."}}
+      true ->
+        moved_board =
+          board
+          |> delete_piece(promotion.source)
+          |> put_piece(promoted_to_piece.type, promoted_to_piece.color, promotion.source)
+        moved_board
     end
-
-    if promoted_to_piece.color != piece.color do
-      raise "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."
-    end
-
-    board
-    |> delete_piece(promotion.source)
-    |> put_piece(promoted_to_piece.type, promoted_to_piece.color, promotion.source)
   end
 
   def to_string(board) do

@@ -3,7 +3,8 @@ defmodule Chexx.BoardTest do
   use ExUnitProperties
   alias Chexx.Square
   alias Chexx.Board
-  
+  import OK, only: [~>: 2, ~>>: 2]
+
   doctest Chexx.Board
 
   defp file do
@@ -32,10 +33,10 @@ defmodule Chexx.BoardTest do
       check all square <- square(),
                 color <- color(),
                 piece <- piece_type() do
-        piece_at_square =
-          Board.new()
-          |> Board.put_piece(piece, color, square)
-          |> Board.piece_at(square)
+        {:ok, piece_at_square} =
+          {:ok, Board.new()}
+          ~>> Board.put_piece(piece, color, square)
+          ~> Board.piece_at(square)
 
         assert piece_at_square.type == piece
         assert piece_at_square.color == color
@@ -58,11 +59,10 @@ defmodule Chexx.BoardTest do
                 color2 <- color(),
                 piece1 <- piece_type(),
                 piece2 <- piece_type() do
-        assert_raise RuntimeError, fn ->
-          Board.new()
-          |> Board.put_piece(piece1, color1, square)
-          |> Board.put_piece(piece2, color2, square)
-        end
+        {:error, _msg} =
+          {:ok, Board.new()}
+          ~>> Board.put_piece(piece1, color1, square)
+          ~>> Board.put_piece(piece2, color2, square)
       end
     end
 
@@ -70,10 +70,9 @@ defmodule Chexx.BoardTest do
       check all color <- color(),
                 piece <- piece_type(),
                 file <- file() do
-        assert_raise RuntimeError, fn ->
+        {:error, _msg} =
           Board.new()
           |> Board.put_piece(piece, color, Square.new(file, 9))
-        end
       end
     end
 
@@ -81,10 +80,9 @@ defmodule Chexx.BoardTest do
       check all color <- color(),
                 piece <- piece_type(),
                 rank <- rank() do
-        assert_raise RuntimeError, fn ->
+        {:error, _msg} =
           Board.new()
           |> Board.put_piece(piece, color, Square.new(9, rank))
-        end
       end
     end
 
@@ -92,10 +90,9 @@ defmodule Chexx.BoardTest do
       check all color <- color(),
                 piece <- piece_type(),
                 file <- file() do
-        assert_raise RuntimeError, fn ->
+        {:error, _msg} =
           Board.new()
           |> Board.put_piece(piece, color, Square.new({file, 0}))
-        end
       end
     end
   end

@@ -6,6 +6,7 @@ defmodule Chexx.Match do
   alias Chexx.Promotion
 
   import Chexx.Color
+  import OK, only: [~>>: 2]
 
   defstruct [
     history: [],
@@ -29,63 +30,68 @@ defmodule Chexx.Match do
 
   @spec new() :: t()
   def new do
-    Board.new()
-    |> Board.put_piece(:pawn, :white, :a, 2)
-    |> Board.put_piece(:pawn, :white, :b, 2)
-    |> Board.put_piece(:pawn, :white, :c, 2)
-    |> Board.put_piece(:pawn, :white, :d, 2)
-    |> Board.put_piece(:pawn, :white, :e, 2)
-    |> Board.put_piece(:pawn, :white, :f, 2)
-    |> Board.put_piece(:pawn, :white, :g, 2)
-    |> Board.put_piece(:pawn, :white, :h, 2)
+    completed_board =
+      {:ok, Board.new()}
+      ~>> Board.put_piece(:pawn, :white, :a, 2)
+      ~>> Board.put_piece(:pawn, :white, :b, 2)
+      ~>> Board.put_piece(:pawn, :white, :c, 2)
+      ~>> Board.put_piece(:pawn, :white, :d, 2)
+      ~>> Board.put_piece(:pawn, :white, :e, 2)
+      ~>> Board.put_piece(:pawn, :white, :f, 2)
+      ~>> Board.put_piece(:pawn, :white, :g, 2)
+      ~>> Board.put_piece(:pawn, :white, :h, 2)
 
-    |> Board.put_piece(:rook, :white, :a, 1)
-    |> Board.put_piece(:knight, :white, :b, 1)
-    |> Board.put_piece(:bishop, :white, :c, 1)
-    |> Board.put_piece(:queen, :white, :d, 1)
-    |> Board.put_piece(:king, :white, :e, 1)
-    |> Board.put_piece(:bishop, :white, :f, 1)
-    |> Board.put_piece(:knight, :white, :g, 1)
-    |> Board.put_piece(:rook, :white, :h, 1)
+      ~>> Board.put_piece(:rook, :white, :a, 1)
+      ~>> Board.put_piece(:knight, :white, :b, 1)
+      ~>> Board.put_piece(:bishop, :white, :c, 1)
+      ~>> Board.put_piece(:queen, :white, :d, 1)
+      ~>> Board.put_piece(:king, :white, :e, 1)
+      ~>> Board.put_piece(:bishop, :white, :f, 1)
+      ~>> Board.put_piece(:knight, :white, :g, 1)
+      ~>> Board.put_piece(:rook, :white, :h, 1)
 
-    |> Board.put_piece(:pawn, :black, :a, 7)
-    |> Board.put_piece(:pawn, :black, :b, 7)
-    |> Board.put_piece(:pawn, :black, :c, 7)
-    |> Board.put_piece(:pawn, :black, :d, 7)
-    |> Board.put_piece(:pawn, :black, :e, 7)
-    |> Board.put_piece(:pawn, :black, :f, 7)
-    |> Board.put_piece(:pawn, :black, :g, 7)
-    |> Board.put_piece(:pawn, :black, :h, 7)
+      ~>> Board.put_piece(:pawn, :black, :a, 7)
+      ~>> Board.put_piece(:pawn, :black, :b, 7)
+      ~>> Board.put_piece(:pawn, :black, :c, 7)
+      ~>> Board.put_piece(:pawn, :black, :d, 7)
+      ~>> Board.put_piece(:pawn, :black, :e, 7)
+      ~>> Board.put_piece(:pawn, :black, :f, 7)
+      ~>> Board.put_piece(:pawn, :black, :g, 7)
+      ~>> Board.put_piece(:pawn, :black, :h, 7)
 
-    |> Board.put_piece(:rook, :black, :a, 8)
-    |> Board.put_piece(:knight, :black, :b, 8)
-    |> Board.put_piece(:bishop, :black, :c, 8)
-    |> Board.put_piece(:queen, :black, :d, 8)
-    |> Board.put_piece(:king, :black, :e, 8)
-    |> Board.put_piece(:bishop, :black, :f, 8)
-    |> Board.put_piece(:knight, :black, :g, 8)
-    |> Board.put_piece(:rook, :black, :h, 8)
-    |> new()
+      ~>> Board.put_piece(:rook, :black, :a, 8)
+      ~>> Board.put_piece(:knight, :black, :b, 8)
+      ~>> Board.put_piece(:bishop, :black, :c, 8)
+      ~>> Board.put_piece(:queen, :black, :d, 8)
+      ~>> Board.put_piece(:king, :black, :e, 8)
+      ~>> Board.put_piece(:bishop, :black, :f, 8)
+      ~>> Board.put_piece(:knight, :black, :g, 8)
+      ~>> Board.put_piece(:rook, :black, :h, 8)
+      ~>> new()
+    case completed_board do
+      {:ok, board} -> board
+      err -> raise "Setting up a board resulted in an error. This is a bug in Chexx. Error: #{inspect err}"
+    end
   end
 
-  @spec new(Chexx.Board.t()) :: t()
+  @spec new(Chexx.Board.t()) :: {:ok, t()} | {:error, any()}
   def new(%Board{} = board) do
-    %__MODULE__{board: board}
+    # TODO: Validate that the board is a valid game, ex. both sides have pieces
+    {:ok, %__MODULE__{board: board}}
   end
 
-  @spec new(Chexx.Board.t(), Chexx.Color.t()) :: t()
+  @spec new(Chexx.Board.t(), Chexx.Color.t()) :: {:ok, t()} | {:error, any()}
   def new(%Board{} = board, color) when is_color(color) do
-    %__MODULE__{board: board, current_player: color}
+    # TODO: Validate that the board is a valid game, ex. both sides have pieces
+    {:ok, %__MODULE__{board: board, current_player: color}}
   end
 
-  @spec put_move(t(), String.t()) :: t()
+  @spec put_move(t(), Chexx.Move.t()) :: t()
   defp put_move(game, move) do
-    Map.update!(game, :history, fn history ->
-      [move | history]
-    end)
+    %{game | history: [move | game.history]}
   end
 
-  @spec resign(t()) :: t()
+  @spec resign(t()) :: {:ok, t()} | {:error, any()}
   def resign(game) do
     status =
       case game.current_player do
@@ -93,20 +99,21 @@ defmodule Chexx.Match do
         :black -> :white_wins
       end
 
-    %{game | status: status}
+    {:ok, %{game | status: status}}
   end
 
-  @spec move(t(), Chexx.Move.t()) :: t()
+  @spec move(t(), Chexx.Move.t()) :: {:ok, t()} | {:error, any()}
   def move(%__MODULE__{} = game, %Move{} = move) do
-    game =
-      game
-      |> Map.update!(:board, &Board.move(&1, move))
-      |> put_move(move)
-      |> update_status()
+    with {:ok, board} <- Board.move(game.board, move) do
+      game =
+        %{game | board: board}
+        |> put_move(move)
+        |> update_status()
 
-    opponent = Color.opponent(game.current_player)
+      opponent = Color.opponent(game.current_player)
 
-    %{game | current_player: opponent}
+      {:ok, %{game | current_player: opponent}}
+    end
   end
 
   defp update_status(game) do
@@ -122,7 +129,7 @@ defmodule Chexx.Match do
     %{game | status: status}
   end
 
-  def disambiguate_moves(moves, game, by, parsed_notation) do
+  def disambiguate_moves(moves, %__MODULE__{} = game, by, parsed_notation) do
     moves
     |> Enum.filter(&Board.valid_move?(game.board, by, &1))
 
@@ -137,12 +144,18 @@ defmodule Chexx.Match do
       expected_check = parsed_notation[:check_status] == :check
       expected_checkmate = parsed_notation[:check_status] == :checkmate
 
-      board = Board.move(game.board, move)
-      results_in_check? = king_in_check?(%{game | board: board}, opponent)
+      results_in_check? =
+        case Board.move(game.board, move) do
+          {:ok, board} -> king_in_check?(%{game | board: board}, opponent)
+          _ -> false
+        end
 
       results_in_checkmate? =
         if results_in_check? do
-          checkmate?(%{game | board: board}, opponent)
+          case Board.move(game.board, move) do
+            {:ok, board} -> checkmate?(%{game | board: board}, opponent)
+            _ -> false
+          end
         else
           false
         end
@@ -182,7 +195,7 @@ defmodule Chexx.Match do
       end
     end)
     |> Enum.reject(fn possible_move ->
-      board = Board.move(game.board, possible_move)
+      {:ok, board} = Board.move(game.board, possible_move)
       king_in_check?(%{game | board: board}, by)
     end)
   end
@@ -253,8 +266,10 @@ defmodule Chexx.Match do
 
     all_moves_result_in_check =
       Enum.all?(possible_moves, fn move ->
-        board = Board.move(game.board, move)
-        king_in_check?(%{game | board: board}, player_checkmated)
+        case Board.move(game.board, move) do
+          {:ok, board} -> king_in_check?(%{game | board: board}, player_checkmated)
+          _ -> false
+        end
       end)
 
     all_moves_result_in_check

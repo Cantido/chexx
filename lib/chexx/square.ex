@@ -209,7 +209,7 @@ defmodule Chexx.Square do
 
   defimpl Inspect, for: __MODULE__ do
     def inspect(square, _opts) do
-      Chexx.Square.to_algebraic(square)
+      "#Square<#{Chexx.Square.to_algebraic(square)}>"
     end
   end
 end

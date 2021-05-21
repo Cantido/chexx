@@ -22,6 +22,7 @@ defmodule Chexx.MixProject do
   defp deps do
     [
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:ok, "~> 2.3"},
       {:stream_data, "~> 0.5", only: :test}
     ]
   end

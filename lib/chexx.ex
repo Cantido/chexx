@@ -15,46 +15,43 @@ defmodule Chexx do
     Match.new(board, current_player)
   end
 
-  def move(game, notation) do
-    try do
-      {:ok, do_move(game, notation)}
-    rescue
-       e in RuntimeError ->
-         {:error, {:invalid_move, e}}
+  def move(%Match{} = game, notation) do
+    with {:ok, game} <- ensure_game_in_progress(game),
+         {:ok, move} <- parse_move(game, notation) do
+      Match.move(game, move)
     end
   end
 
-  defp do_move(game, notation) do
-    unless game.status == :in_progress do
-      raise "Game ended, status: #{game.status}"
+  defp ensure_game_in_progress(game) do
+    if game.status == :in_progress do
+      {:ok, game}
+    else
+      {:error, :game_over}
     end
+  end
 
+  defp parse_move(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
     moves =
       Move.possible_moves(parsed_notation, game.current_player)
       |> Match.disambiguate_moves(game, game.current_player, parsed_notation)
 
-    if Enum.empty?(moves) do
-      raise "No valid moves found for #{game.current_player} matching #{inspect notation}. on this board: \n#{inspect(game.board)}\n"
-    end
-
     possible_moves_count = Enum.count(moves)
-    if possible_moves_count > 1 do
-      raise "Ambiguous move: notation #{notation} can mean #{possible_moves_count} possible moves: #{inspect moves}"
+
+    if possible_moves_count == 1 do
+      {:ok, Enum.at(moves, 0)}
+    else
+      {:error, :invalid_move}
     end
-
-    move = Enum.at(moves, 0)
-
-    Match.move(game, move)
   end
 
-  def turn(game, move1, move2) do
+  def turn(%Match{} = game, move1, move2) do
     with {:ok, game} <- move(game, move1) do
       move(game, move2)
     end
   end
 
-  def moves(game, moves) when is_list(moves) do
+  def moves(%Match{} = game, moves) when is_list(moves) do
     Enum.reduce_while(moves, {:ok, game}, fn move, {:ok, game} ->
       case move(game, move) do
         {:ok, game} -> {:cont, {:ok, game}}
@@ -63,7 +60,7 @@ defmodule Chexx do
     end)
   end
 
-  def turns(game, turns) when is_list(turns) do
+  def turns(%Match{} = game, turns) when is_list(turns) do
     Enum.reduce_while(turns, {:ok, game}, fn turn, {:ok, game} ->
       case moves(game, String.split(turn)) do
         {:ok, game} -> {:cont, {:ok, game}}
@@ -72,7 +69,7 @@ defmodule Chexx do
     end)
   end
 
-  def resign(game) do
-    {:ok, Match.resign(game)}
+  def resign(%Match{} = game) do
+    Match.resign(game)
   end
 end
