@@ -16,6 +16,15 @@ defmodule Chexx do
   end
 
   def move(game, notation) do
+    try do
+      {:ok, do_move(game, notation)}
+    rescue
+       e in RuntimeError ->
+         {:error, {:invalid_move, e}}
+    end
+  end
+
+  defp do_move(game, notation) do
     unless game.status == :in_progress do
       raise "Game ended, status: #{game.status}"
     end
@@ -40,24 +49,30 @@ defmodule Chexx do
   end
 
   def turn(game, move1, move2) do
-    game
-    |> move(move1)
-    |> move(move2)
+    with {:ok, game} <- move(game, move1) do
+      move(game, move2)
+    end
   end
 
   def moves(game, moves) when is_list(moves) do
-    Enum.reduce(moves, game, fn move, game ->
-      move(game, move)
+    Enum.reduce_while(moves, {:ok, game}, fn move, {:ok, game} ->
+      case move(game, move) do
+        {:ok, game} -> {:cont, {:ok, game}}
+        err -> {:halt, err}
+      end
     end)
   end
 
   def turns(game, turns) when is_list(turns) do
-    Enum.reduce(turns, game, fn turn, game ->
-      moves(game, String.split(turn))
+    Enum.reduce_while(turns, {:ok, game}, fn turn, {:ok, game} ->
+      case moves(game, String.split(turn)) do
+        {:ok, game} -> {:cont, {:ok, game}}
+        err -> {:halt, err}
+      end
     end)
   end
 
   def resign(game) do
-    Match.resign(game)
+    {:ok, Match.resign(game)}
   end
 end
