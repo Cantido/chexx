@@ -1,6 +1,8 @@
 # Chexx
 
-**TODO: Add description**
+Chexx is a chess library written in Elixir.
+
+It simulates a board with pieces, and will validate moves.
 
 ## Installation
 
@@ -19,3 +21,12 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/chexx](https://hexdocs.pm/chexx).
 
+## Usage
+
+Start a new game with `Chexx.start_game/0`, and move with `Chexx.move/2`.
+
+    iex> game = Chexx.start_game()
+    #Chexx.Match<current_player: :white, status: :in_progress, ...>
+    iex> {:ok, game} = Chexx.move(game, "e3")
+    ...> game
+    #Chexx.Match<current_player: :black, status: :in_progress, ...>
