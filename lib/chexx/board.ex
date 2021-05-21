@@ -25,6 +25,8 @@ defmodule Chexx.Board do
     occupied_positions: [occupied_position()]
   }
 
+  @type move_error() :: :invalid_destination | :square_occupied
+
   defstruct [
     occupied_positions: []
   ]
@@ -40,7 +42,7 @@ defmodule Chexx.Board do
     put_piece(board, type, color, Square.new(file, rank))
   end
 
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, any()}
+  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, move_error()}
   def put_piece(%__MODULE__{} = board, type, color, %Square{} = square)  when is_piece(type) and is_color(color) do
     square = Square.new(square)
     piece_at_square = piece_at(board, square)
@@ -90,6 +92,11 @@ defmodule Chexx.Board do
       nil -> nil
       occupied_position -> Map.fetch!(occupied_position, :piece)
     end
+  end
+
+  @spec find_pieces(t(), Chexx.Color.t(), Chexx.Piece.piece()) :: [Chexx.Square.t()]
+  def find_pieces(%__MODULE__{} = board, color, type) do
+    find_pieces(board, Piece.new(type, color))
   end
 
   @spec find_pieces(t(), Chexx.Piece.t()) :: [Chexx.Square.t()]
@@ -171,7 +178,7 @@ defmodule Chexx.Board do
         |> put_piece(piece.type, piece.color, touch.destination)
     end
   end
-  
+
   @spec move_piece(t(), Chexx.Promotion.t()) :: {:ok, t()} | {:error, any()}
   defp move_piece(%__MODULE__{} = board, %Promotion{} = promotion) do
     piece = piece_at(board, promotion.source)
