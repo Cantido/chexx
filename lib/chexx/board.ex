@@ -7,7 +7,7 @@ defmodule Chexx.Board do
 
   alias Chexx.Square
   alias Chexx.Piece
-  alias Chexx.Move
+  alias Chexx.Ply
   alias Chexx.Touch
   alias Chexx.Promotion
   alias Chexx.Color
@@ -160,7 +160,7 @@ defmodule Chexx.Board do
     end)
   end
 
-  def valid_move?(%__MODULE__{} = board, by, %Move{} = move) do
+  def valid_move?(%__MODULE__{} = board, by, %Ply{} = move) do
     all_touches_present? =
       Enum.all?(move.movements, fn movement ->
         case movement do
@@ -200,8 +200,8 @@ defmodule Chexx.Board do
     all_touches_present? and path_clear? and capture_valid? and destination_clear?
   end
 
-  @spec move(t(), Chexx.Move.t()) :: {:ok, t()} | {:error, any()}
-  def move(%__MODULE__{} = board, %Move{} = move) do
+  @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}
+  def move(%__MODULE__{} = board, %Ply{} = move) do
     captured_square = Map.get(move, :captures)
 
     board = delete_piece(board, captured_square)

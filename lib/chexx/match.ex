@@ -2,7 +2,7 @@ defmodule Chexx.Match do
   alias Chexx.Color
   alias Chexx.Board
   alias Chexx.Piece
-  alias Chexx.Move
+  alias Chexx.Ply
   alias Chexx.Promotion
 
   import Chexx.Color
@@ -20,7 +20,7 @@ defmodule Chexx.Match do
   @type turn() :: String.t()
   @type match_status() :: :in_progress | :white_wins | :black_wins | :draw
   @type t() :: %__MODULE__{
-    history: [Chess.Move.t()],
+    history: [Chess.Ply.t()],
     current_player: Chexx.Color.t(),
     board: Chexx.Board.t(),
     status: match_status()
@@ -49,7 +49,7 @@ defmodule Chexx.Match do
     {:ok, %__MODULE__{board: board, current_player: color}}
   end
 
-  @spec put_move(t(), Chexx.Move.t()) :: t()
+  @spec put_move(t(), Chexx.Ply.t()) :: t()
   defp put_move(game, move) do
     %{game | history: [move | game.history]}
   end
@@ -65,8 +65,8 @@ defmodule Chexx.Match do
     {:ok, %{game | status: status}}
   end
 
-  @spec move(t(), Chexx.Move.t()) :: {:ok, t()} | {:error, any()}
-  def move(%__MODULE__{} = game, %Move{} = move) do
+  @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}
+  def move(%__MODULE__{} = game, %Ply{} = move) do
     with {:ok, board} <- Board.move(game.board, move) do
       game =
         %{game | board: board}
@@ -146,7 +146,7 @@ defmodule Chexx.Match do
     end)
     |> Enum.filter(fn possible_move ->
       if is_nil(parsed_notation[:promoted_to]) do
-        not Move.any_promotions?(possible_move)
+        not Ply.any_promotions?(possible_move)
       else
         Enum.any?(possible_move.movements, fn movement ->
           case movement do
@@ -175,12 +175,12 @@ defmodule Chexx.Match do
 
     possible_king_captures =
       Enum.flat_map(king_squares, fn king_square ->
-        Move.possible_pawn_sources(opponent, king_square) ++
-        Move.possible_king_sources(opponent, king_square) ++
-        Move.possible_queen_sources(opponent, king_square) ++
-        Move.possible_rook_sources(opponent, king_square) ++
-        Move.possible_bishop_sources(opponent, king_square) ++
-        Move.possible_knight_sources(opponent, king_square)
+        Ply.possible_pawn_sources(opponent, king_square) ++
+        Ply.possible_king_sources(opponent, king_square) ++
+        Ply.possible_queen_sources(opponent, king_square) ++
+        Ply.possible_rook_sources(opponent, king_square) ++
+        Ply.possible_bishop_sources(opponent, king_square) ++
+        Ply.possible_knight_sources(opponent, king_square)
       end)
       |> Enum.filter(&Board.valid_move?(game.board, opponent, &1))
       |> Enum.filter(fn possible_move ->
@@ -204,18 +204,18 @@ defmodule Chexx.Match do
       end)
       |> Enum.flat_map(fn %{square: square, piece: piece} ->
         case piece.type do
-          :pawn -> Move.possible_pawn_moves(player_checkmated, square)
-          :king -> Move.possible_king_moves(player_checkmated, square)
-          :queen -> Move.possible_queen_moves(player_checkmated, square)
-          :rook -> Move.possible_rook_moves(player_checkmated, square)
-          :bishop -> Move.possible_bishop_moves(player_checkmated, square)
-          :knight -> Move.possible_knight_moves(player_checkmated, square)
+          :pawn -> Ply.possible_pawn_moves(player_checkmated, square)
+          :king -> Ply.possible_king_moves(player_checkmated, square)
+          :queen -> Ply.possible_queen_moves(player_checkmated, square)
+          :rook -> Ply.possible_rook_moves(player_checkmated, square)
+          :bishop -> Ply.possible_bishop_moves(player_checkmated, square)
+          :knight -> Ply.possible_knight_moves(player_checkmated, square)
         end
       end)
 
     all_moves =
-      Move.kingside_castle(player_checkmated) ++
-      Move.queenside_castle(player_checkmated) ++
+      Ply.kingside_castle(player_checkmated) ++
+      Ply.queenside_castle(player_checkmated) ++
       regular_moves
 
     possible_moves =

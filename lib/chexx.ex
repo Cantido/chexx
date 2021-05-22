@@ -2,7 +2,7 @@ defmodule Chexx do
   @moduledoc """
   Chexx is a chess library, written in Elixir.
   It simulates a board with pieces, and will validate moves.
-  Start a new game with `Chexx.start_game/0`, and move with `Chexx.move/2`.
+  Start a new game with `Chexx.start_game/0`, and move with `Chexx.Ply/2`.
 
       iex> game = Chexx.start_game()
       #Chexx.Match<current_player: :white, status: :in_progress, ...>
@@ -24,7 +24,7 @@ defmodule Chexx do
 
   alias Chexx.AlgebraicNotation
   alias Chexx.Match
-  alias Chexx.Move
+  alias Chexx.Ply
 
   @doc """
   Start a new game of chess.
@@ -65,7 +65,7 @@ defmodule Chexx do
   defp parse_move(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
     moves =
-      Move.possible_moves(parsed_notation, game.current_player)
+      Ply.possible_moves(parsed_notation, game.current_player)
       |> Match.disambiguate_moves(game, game.current_player, parsed_notation)
 
     possible_moves_count = Enum.count(moves)

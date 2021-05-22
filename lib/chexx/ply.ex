@@ -1,9 +1,9 @@
-defmodule Chexx.Move do
+defmodule Chexx.Ply do
   @moduledoc """
   Encapsulates a change in `Chexx.Piece`'s position on a `Chexx.Board`,
   along with certain requirements of the move.
 
-  A Move is usually built from a single `Chexx.Touch`, but some moves require multiple touches,
+  A Ply is usually built from a single `Chexx.Touch`, but some moves require multiple touches,
   like castling.
   """
 
