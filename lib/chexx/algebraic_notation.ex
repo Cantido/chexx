@@ -8,7 +8,9 @@ defmodule Chexx.AlgebraicNotation do
     case notation do
       # TODO: allow castling to mark the check? flag
       "0-0" -> %{move_type: :kingside_castle, check?: false, notation_source: "0-0"}
+      "O-O" -> %{move_type: :kingside_castle, check?: false, notation_source: "O-O"}
       "0-0-0" -> %{move_type: :queenside_castle, check?: false, notation_source: "0-0-0"}
+      "O-O-O" -> %{move_type: :queenside_castle, check?: false, notation_source: "O-O-O"}
       notation -> parse_regular_coords(notation)
     end
   end
