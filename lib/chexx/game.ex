@@ -1,4 +1,4 @@
-defmodule Chexx.Match do
+defmodule Chexx.Game do
   alias Chexx.Color
   alias Chexx.Board
   alias Chexx.Piece

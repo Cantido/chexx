@@ -1,5 +1,5 @@
-defmodule Chexx.MatchTest do
+defmodule Chexx.GameTest do
   use ExUnit.Case
   
-  doctest Chexx.Match
+  doctest Chexx.Game
 end
