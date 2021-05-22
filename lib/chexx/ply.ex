@@ -105,7 +105,7 @@ defmodule Chexx.Ply do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
+          move.__struct__ == Touch and Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
         end)
 
       rook_moved_before? =
@@ -116,7 +116,9 @@ defmodule Chexx.Ply do
                 :white -> 1
                 :black -> 8
               end
-            Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 8, rook_start_rank)
+            move.__struct__ == Touch and
+              Piece.equals?(movement.piece, by, :rook) and
+              Square.equals?(movement.source, 8, rook_start_rank)
           end)
         end)
 
@@ -161,7 +163,7 @@ defmodule Chexx.Ply do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
+          move.__struct__ == Touch and Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
         end)
 
       rook_moved_before? =
@@ -172,7 +174,7 @@ defmodule Chexx.Ply do
                 :white -> 1
                 :black -> 8
               end
-            Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 1, rook_start_rank)
+            move.__struct__ == Touch and Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 1, rook_start_rank)
           end)
         end)
 

@@ -71,23 +71,33 @@ defmodule Chexx.Game do
       game =
         %{game | board: board}
         |> put_ply(ply)
-        |> update_status()
 
       opponent = Color.opponent(game.current_player)
 
-      {:ok, %{game | current_player: opponent}}
+      game = update_status(%{game | current_player: opponent})
+
+      {:ok, game}
     end
   end
 
   defp update_status(game) do
+    legal_plies = legal_plies(game)
+    check? = check?(game)
+
+    checkmate? = check? and Enum.empty?(legal_plies)
+    stalemate? = (not check?) and Enum.empty?(legal_plies)
+
     status =
-      if checkmate?(game, Color.opponent(game.current_player)) do
-        case game.current_player do
-          :white -> :white_wins
-          :black -> :black_wins
-        end
-      else
-        game.status
+      cond do
+        checkmate? ->
+          case game.current_player do
+            :white -> :black_wins
+            :black -> :white_wins
+          end
+        stalemate? ->
+          :draw
+        true ->
+          game.status
       end
     %{game | status: status}
   end
@@ -109,14 +119,14 @@ defmodule Chexx.Game do
 
       results_in_check? =
         case Board.move(game.board, ply) do
-          {:ok, board} -> king_in_check?(%{game | board: board}, opponent)
+          {:ok, board} -> check?(%{game | board: board, current_player: opponent})
           _ -> false
         end
 
       results_in_checkmate? =
         if results_in_check? do
           case Board.move(game.board, ply) do
-            {:ok, board} -> checkmate?(%{game | board: board}, opponent)
+            {:ok, board} -> checkmate?(%{game | board: board, current_player: opponent})
             _ -> false
           end
         else
@@ -159,7 +169,7 @@ defmodule Chexx.Game do
     end)
     |> Enum.reject(fn possible_ply ->
       {:ok, board} = Board.move(game.board, possible_ply)
-      king_in_check?(%{game | board: board}, by)
+      check?(%{game | board: board, current_player: by})
     end)
   end
 
@@ -168,7 +178,8 @@ defmodule Chexx.Game do
   defp xor(false, true), do: true
   defp xor(false, false), do: false
 
-  defp king_in_check?(game, player_in_check) do
+  defp check?(game) do
+    player_in_check = game.current_player
     opponent = Color.opponent(player_in_check)
     king = Piece.new(:king, player_in_check)
     king_squares = Board.find_pieces(game.board, king)
@@ -196,45 +207,53 @@ defmodule Chexx.Game do
     Enum.count(possible_king_captures) > 0
   end
 
-  defp checkmate?(game, player_checkmated) do
+  def checkmate?(game) do
+    check?(game) and Enum.empty?(legal_plies(game))
+  end
+
+  def stalemate?(game) do
+    (not check?(game)) and Enum.empty?(legal_plies(game))
+  end
+
+  defp legal_plies(game) do
+    player = game.current_player
     regular_plies =
       game.board.occupied_positions
       |> Enum.filter(fn occ_pos ->
-        occ_pos.piece.color == player_checkmated
+        occ_pos.piece.color == player
       end)
       |> Enum.flat_map(fn %{square: square, piece: piece} ->
         case piece.type do
-          :pawn -> Ply.possible_pawn_moves(player_checkmated, square)
-          :king -> Ply.possible_king_moves(player_checkmated, square)
-          :queen -> Ply.possible_queen_moves(player_checkmated, square)
-          :rook -> Ply.possible_rook_moves(player_checkmated, square)
-          :bishop -> Ply.possible_bishop_moves(player_checkmated, square)
-          :knight -> Ply.possible_knight_moves(player_checkmated, square)
+          :pawn -> Ply.possible_pawn_moves(player, square)
+          :king -> Ply.possible_king_moves(player, square)
+          :queen -> Ply.possible_queen_moves(player, square)
+          :rook -> Ply.possible_rook_moves(player, square)
+          :bishop -> Ply.possible_bishop_moves(player, square)
+          :knight -> Ply.possible_knight_moves(player, square)
         end
       end)
 
     all_plies =
-      Ply.kingside_castle(player_checkmated) ++
-      Ply.queenside_castle(player_checkmated) ++
+      Ply.kingside_castle(player) ++
+      Ply.queenside_castle(player) ++
       regular_plies
 
-    possible_plies =
-      all_plies
-      |> Enum.filter(&Board.valid_ply?(game.board, player_checkmated, &1))
-      |> Enum.filter(fn possible_ply ->
-        match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
 
-        match_history_fn.(game.history)
-      end)
+    Enum.filter(all_plies, &legal_ply?(game, &1))
+  end
 
-    all_plies_result_in_check =
-      Enum.all?(possible_plies, fn ply ->
-        case Board.move(game.board, ply) do
-          {:ok, board} -> king_in_check?(%{game | board: board}, player_checkmated)
-          _ -> false
-        end
-      end)
+  def legal_ply?(game, ply) do
+    valid_on_board? = Board.valid_ply?(game.board, game.current_player, ply)
 
-    all_plies_result_in_check
+    match_history_fn = Map.get(ply, :match_history_fn, fn _ -> true end)
+    match_history_allows? = match_history_fn.(game.history)
+
+    ply_puts_player_in_check? =
+      case Board.move(game.board, ply) do
+        {:ok, board} -> check?(%{game | board: board})
+        _ -> false
+      end
+
+    valid_on_board? and match_history_allows? and not ply_puts_player_in_check?
   end
 end
