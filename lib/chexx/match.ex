@@ -16,7 +16,7 @@ defmodule Chexx.Match do
   ]
 
   @type parsed_notation() :: map()
-  @type move() :: String.t()
+  @type ply() :: String.t()
   @type turn() :: String.t()
   @type match_status() :: :in_progress | :white_wins | :black_wins | :draw
   @type t() :: %__MODULE__{
@@ -49,9 +49,9 @@ defmodule Chexx.Match do
     {:ok, %__MODULE__{board: board, current_player: color}}
   end
 
-  @spec put_move(t(), Chexx.Ply.t()) :: t()
-  defp put_move(game, move) do
-    %{game | history: [move | game.history]}
+  @spec put_ply(t(), Chexx.Ply.t()) :: t()
+  defp put_ply(game, ply) do
+    %{game | history: [ply | game.history]}
   end
 
   @spec resign(t()) :: {:ok, t()} | {:error, any()}
@@ -66,11 +66,11 @@ defmodule Chexx.Match do
   end
 
   @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}
-  def move(%__MODULE__{} = game, %Ply{} = move) do
-    with {:ok, board} <- Board.move(game.board, move) do
+  def move(%__MODULE__{} = game, %Ply{} = ply) do
+    with {:ok, board} <- Board.move(game.board, ply) do
       game =
         %{game | board: board}
-        |> put_move(move)
+        |> put_ply(ply)
         |> update_status()
 
       opponent = Color.opponent(game.current_player)
@@ -92,30 +92,30 @@ defmodule Chexx.Match do
     %{game | status: status}
   end
 
-  def disambiguate_moves(moves, %__MODULE__{} = game, by, parsed_notation) do
-    moves
-    |> Enum.filter(&Board.valid_move?(game.board, by, &1))
+  def disambiguate_plies(plies, %__MODULE__{} = game, by, parsed_notation) do
+    plies
+    |> Enum.filter(&Board.valid_ply?(game.board, by, &1))
 
-    |> Enum.filter(fn possible_move ->
-      match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+    |> Enum.filter(fn possible_ply ->
+      match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
 
       match_history_fn.(game.history)
     end)
-    |> Enum.filter(fn move ->
+    |> Enum.filter(fn ply ->
       opponent = Color.opponent(by)
 
       expected_check = parsed_notation[:check_status] == :check
       expected_checkmate = parsed_notation[:check_status] == :checkmate
 
       results_in_check? =
-        case Board.move(game.board, move) do
+        case Board.move(game.board, ply) do
           {:ok, board} -> king_in_check?(%{game | board: board}, opponent)
           _ -> false
         end
 
       results_in_checkmate? =
         if results_in_check? do
-          case Board.move(game.board, move) do
+          case Board.move(game.board, ply) do
             {:ok, board} -> checkmate?(%{game | board: board}, opponent)
             _ -> false
           end
@@ -132,10 +132,10 @@ defmodule Chexx.Match do
         valid_check_notation
       end
     end)
-    |> Enum.filter(fn possible_move ->
+    |> Enum.filter(fn possible_ply ->
       if not is_nil(parsed_notation[:source_file]) do
         if parsed_notation.move_type == :regular do
-          [touch] = possible_move.movements
+          [touch] = possible_ply.touches
           parsed_notation.source_file == touch.source.file
         else
           true
@@ -144,21 +144,21 @@ defmodule Chexx.Match do
         true
       end
     end)
-    |> Enum.filter(fn possible_move ->
+    |> Enum.filter(fn possible_ply ->
       if is_nil(parsed_notation[:promoted_to]) do
-        not Ply.any_promotions?(possible_move)
+        not Ply.any_promotions?(possible_ply)
       else
-        Enum.any?(possible_move.movements, fn movement ->
-          case movement do
+        Enum.any?(possible_ply.touches, fn touch ->
+          case touch do
             %Promotion{} ->
-              movement.promoted_to.type == parsed_notation[:promoted_to]
+              touch.promoted_to.type == parsed_notation[:promoted_to]
             _ -> false
           end
         end)
       end
     end)
-    |> Enum.reject(fn possible_move ->
-      {:ok, board} = Board.move(game.board, possible_move)
+    |> Enum.reject(fn possible_ply ->
+      {:ok, board} = Board.move(game.board, possible_ply)
       king_in_check?(%{game | board: board}, by)
     end)
   end
@@ -182,22 +182,22 @@ defmodule Chexx.Match do
         Ply.possible_bishop_sources(opponent, king_square) ++
         Ply.possible_knight_sources(opponent, king_square)
       end)
-      |> Enum.filter(&Board.valid_move?(game.board, opponent, &1))
-      |> Enum.filter(fn possible_move ->
-        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+      |> Enum.filter(&Board.valid_ply?(game.board, opponent, &1))
+      |> Enum.filter(fn possible_ply ->
+        match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
 
         match_history_fn.(game.history)
       end)
-      |> Enum.filter(fn possible_move ->
-        is_nil(possible_move.captured_piece_type) or
-         possible_move.captured_piece_type == :king
+      |> Enum.filter(fn possible_ply ->
+        is_nil(possible_ply.captured_piece_type) or
+         possible_ply.captured_piece_type == :king
       end)
 
     Enum.count(possible_king_captures) > 0
   end
 
   defp checkmate?(game, player_checkmated) do
-    regular_moves =
+    regular_plies =
       game.board.occupied_positions
       |> Enum.filter(fn occ_pos ->
         occ_pos.piece.color == player_checkmated
@@ -213,28 +213,28 @@ defmodule Chexx.Match do
         end
       end)
 
-    all_moves =
+    all_plies =
       Ply.kingside_castle(player_checkmated) ++
       Ply.queenside_castle(player_checkmated) ++
-      regular_moves
+      regular_plies
 
-    possible_moves =
-      all_moves
-      |> Enum.filter(&Board.valid_move?(game.board, player_checkmated, &1))
-      |> Enum.filter(fn possible_move ->
-        match_history_fn = Map.get(possible_move, :match_history_fn, fn _ -> true end)
+    possible_plies =
+      all_plies
+      |> Enum.filter(&Board.valid_ply?(game.board, player_checkmated, &1))
+      |> Enum.filter(fn possible_ply ->
+        match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
 
         match_history_fn.(game.history)
       end)
 
-    all_moves_result_in_check =
-      Enum.all?(possible_moves, fn move ->
-        case Board.move(game.board, move) do
+    all_plies_result_in_check =
+      Enum.all?(possible_plies, fn ply ->
+        case Board.move(game.board, ply) do
           {:ok, board} -> king_in_check?(%{game | board: board}, player_checkmated)
           _ -> false
         end
       end)
 
-    all_moves_result_in_check
+    all_plies_result_in_check
   end
 end

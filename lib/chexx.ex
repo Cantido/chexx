@@ -2,11 +2,11 @@ defmodule Chexx do
   @moduledoc """
   Chexx is a chess library, written in Elixir.
   It simulates a board with pieces, and will validate moves.
-  Start a new game with `Chexx.start_game/0`, and move with `Chexx.Ply/2`.
+  Start a new game with `Chexx.start_game/0`, and play with `Chexx.ply/2`.
 
       iex> game = Chexx.start_game()
       #Chexx.Match<current_player: :white, status: :in_progress, ...>
-      iex> {:ok, game} = Chexx.move(game, "e3")
+      iex> {:ok, game} = Chexx.ply(game, "e3")
       ...> game
       #Chexx.Match<current_player: :black, status: :in_progress, ...>
 
@@ -46,11 +46,11 @@ defmodule Chexx do
   Make a move as the current player.
   Provide your move in algebraic notation.
   """
-  @spec move(Chexx.Match.t(), String.t()) :: {:ok, Chexx.Match.t()} | {:error, any()}
-  def move(%Match{} = game, notation) do
+  @spec ply(Chexx.Match.t(), String.t()) :: {:ok, Chexx.Match.t()} | {:error, any()}
+  def ply(%Match{} = game, notation) do
     with {:ok, game} <- ensure_game_in_progress(game),
-         {:ok, move} <- parse_move(game, notation) do
-      Match.move(game, move)
+         {:ok, ply} <- parse_ply(game, notation) do
+      Match.move(game, ply)
     end
   end
 
@@ -62,40 +62,40 @@ defmodule Chexx do
     end
   end
 
-  defp parse_move(game, notation) do
+  defp parse_ply(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
-    moves =
+    plies =
       Ply.possible_moves(parsed_notation, game.current_player)
-      |> Match.disambiguate_moves(game, game.current_player, parsed_notation)
+      |> Match.disambiguate_plies(game, game.current_player, parsed_notation)
 
-    possible_moves_count = Enum.count(moves)
+    possible_plies_count = Enum.count(plies)
 
-    if possible_moves_count == 1 do
-      {:ok, Enum.at(moves, 0)}
+    if possible_plies_count == 1 do
+      {:ok, Enum.at(plies, 0)}
     else
-      {:error, :invalid_move}
+      {:error, :invalid_ply}
     end
   end
 
   @doc """
-  Make two moves at once.
-  This works just as if you called `move/2` twice.
+  Make two plies at once.
+  This works just as if you called `ply/2` twice.
   """
-  @spec turn(Chexx.Match.t(), String.t(), String.t()) :: {:ok, Chexx.Match.t()} | {:error, any()}
-  def turn(%Match{} = game, move1, move2) do
-    with {:ok, game} <- move(game, move1) do
-      move(game, move2)
+  @spec move(Chexx.Match.t(), String.t(), String.t()) :: {:ok, Chexx.Match.t()} | {:error, any()}
+  def move(%Match{} = game, ply1, ply2) do
+    with {:ok, game} <- ply(game, ply1) do
+      ply(game, ply2)
     end
   end
 
   @doc """
-  Make many moves at once.
-  This works just as if you called `move/2` multiple times.
+  Make many plies at once.
+  This works just as if you called `ply/2` multiple times.
   """
-  @spec moves(Chexx.Match.t(), [String.t()]) :: {:ok, Chexx.Match.t()} | {:error, any()}
-  def moves(%Match{} = game, moves) when is_list(moves) do
-    Enum.reduce_while(moves, {:ok, game}, fn move, {:ok, game} ->
-      case move(game, move) do
+  @spec plies(Chexx.Match.t(), [String.t()]) :: {:ok, Chexx.Match.t()} | {:error, any()}
+  def plies(%Match{} = game, plies) when is_list(plies) do
+    Enum.reduce_while(plies, {:ok, game}, fn ply, {:ok, game} ->
+      case ply(game, ply) do
         {:ok, game} -> {:cont, {:ok, game}}
         err -> {:halt, err}
       end
@@ -104,12 +104,12 @@ defmodule Chexx do
 
   @doc """
   Make many moves at once.
-  A turn is two moves separated by a space.
+  A moves is two plies separated by a space.
   """
-  @spec turns(Chexx.Match.t(), [String.t()]) :: {:ok, Chexx.Match.t()} | {:error, any()}
-  def turns(%Match{} = game, turns) when is_list(turns) do
+  @spec moves(Chexx.Match.t(), [String.t()]) :: {:ok, Chexx.Match.t()} | {:error, any()}
+  def moves(%Match{} = game, turns) when is_list(turns) do
     Enum.reduce_while(turns, {:ok, game}, fn turn, {:ok, game} ->
-      case moves(game, String.split(turn)) do
+      case plies(game, String.split(turn)) do
         {:ok, game} -> {:cont, {:ok, game}}
         err -> {:halt, err}
       end

@@ -160,10 +160,10 @@ defmodule Chexx.Board do
     end)
   end
 
-  def valid_move?(%__MODULE__{} = board, by, %Ply{} = move) do
+  def valid_ply?(%__MODULE__{} = board, by, %Ply{} = ply) do
     all_touches_present? =
-      Enum.all?(move.movements, fn movement ->
-        case movement do
+      Enum.all?(ply.touches, fn touch ->
+        case touch do
           %Touch{source: src, piece: expected_piece} ->
             actual_piece = piece_at(board, src)
             expected_piece.color == by and expected_piece == actual_piece
@@ -172,22 +172,22 @@ defmodule Chexx.Board do
       end)
 
     path_clear? =
-      Enum.all?(Map.get(move, :traverses, []), fn traversed_square ->
+      Enum.all?(Map.get(ply, :traverses, []), fn traversed_square ->
         is_nil(piece_at(board, traversed_square))
       end)
 
     destination_clear? =
-      Enum.all?(move.movements, fn movement ->
-          case movement do
+      Enum.all?(ply.touches, fn touch ->
+          case touch do
             %Touch{destination: dest} ->
               landing_piece = piece_at(board, dest)
-              is_nil(landing_piece) or move.captures == dest
+              is_nil(landing_piece) or ply.captures == dest
             _ -> true
           end
       end)
 
-    capture = Map.get(move, :capture, :forbidden)
-    captured_square = Map.get(move, :captures)
+    capture = Map.get(ply, :capture, :forbidden)
+    captured_square = Map.get(ply, :captures)
     captured_piece = piece_at(board, captured_square)
 
     capture_valid? =
@@ -201,12 +201,12 @@ defmodule Chexx.Board do
   end
 
   @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}
-  def move(%__MODULE__{} = board, %Ply{} = move) do
-    captured_square = Map.get(move, :captures)
+  def move(%__MODULE__{} = board, %Ply{} = ply) do
+    captured_square = Map.get(ply, :captures)
 
     board = delete_piece(board, captured_square)
 
-    Enum.reduce_while(move.movements, {:ok, board}, fn touch, {:ok, board} ->
+    Enum.reduce_while(ply.touches, {:ok, board}, fn touch, {:ok, board} ->
       case move_piece(board, touch) do
         {:ok, board} -> {:cont, {:ok, board}}
         err -> {:halt, err}
@@ -215,13 +215,13 @@ defmodule Chexx.Board do
   end
 
   @spec move_piece(t(), Chexx.Touch.t()) :: {:ok, t()} | {:error, any()}
-    defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
+  defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
     piece = piece_at(board, touch.source)
 
     cond do
-      is_nil(piece) -> {:error, {:invalid_move, "No piece at #{inspect touch.source} to move."}}
-      touch.piece.type != piece.type -> {:error, {:invalid_move, "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."}}
-      touch.piece.color != piece.color -> {:error, {:invalid_move, "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."}}
+      is_nil(piece) -> {:error, {:invalid_ply, "No piece at #{inspect touch.source} to move."}}
+      touch.piece.type != piece.type -> {:error, {:invalid_ply, "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."}}
+      touch.piece.color != piece.color -> {:error, {:invalid_ply, "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."}}
       true ->
         board
         |> delete_piece(touch.source)
@@ -235,8 +235,8 @@ defmodule Chexx.Board do
     promoted_to_piece = promotion.promoted_to
 
     cond do
-      is_nil(piece) -> {:error, {:invalid_move, "No piece at #{inspect promotion.source} to promote."}}
-      promoted_to_piece.color != piece.color -> {:error, {:invalid_move, "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."}}
+      is_nil(piece) -> {:error, {:invalid_ply, "No piece at #{inspect promotion.source} to promote."}}
+      promoted_to_piece.color != piece.color -> {:error, {:invalid_ply, "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."}}
       true ->
         moved_board =
           board

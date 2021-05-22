@@ -23,10 +23,10 @@ be found at [https://hexdocs.pm/chexx](https://hexdocs.pm/chexx).
 
 ## Usage
 
-Start a new game with `Chexx.start_game/0`, and move with `Chexx.Ply/2`.
+Start a new game with `Chexx.start_game/0`, and move with `Chexx.ply/2`.
 
     iex> game = Chexx.start_game()
     #Chexx.Match<current_player: :white, status: :in_progress, ...>
-    iex> {:ok, game} = Chexx.move(game, "e3")
+    iex> {:ok, game} = Chexx.ply(game, "e3")
     ...> game
     #Chexx.Match<current_player: :black, status: :in_progress, ...>

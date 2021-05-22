@@ -55,7 +55,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:pawn, :white, start_square)
           ~>> Chexx.play_board(:white)
-          ~>> Chexx.move(move)
+          ~>> Chexx.ply(move)
 
         piece_at_dest = Board.piece_at(game.board, destination)
 
@@ -74,7 +74,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:pawn, :black, start_square)
           ~>> Chexx.play_board(:black)
-          ~>> Chexx.move(move)
+          ~>> Chexx.ply(move)
 
         piece_at_dest = Board.piece_at(match.board, dest_square)
 
@@ -88,7 +88,7 @@ defmodule ChexxTest do
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :white, :e, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e4")
+        ~>> Chexx.ply("e4")
 
       piece = Board.piece_at(match.board, :e, 4)
 
@@ -102,25 +102,25 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:pawn, :white, :d, 6)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("d7+")
+        ~>> Chexx.ply("d7+")
     end
 
     test "can't give check notation if the king is not in check" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:pawn, :white, :d, 5)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("d6+")
+        ~>> Chexx.ply("d6+")
     end
 
     test "expects notation when king is in check" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:pawn, :white, :d, 6)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("d7")
+        ~>> Chexx.ply("d7")
     end
 
     test "can move a black pawn down two squares if it is in the starting row" do
@@ -128,7 +128,7 @@ defmodule ChexxTest do
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :black, :e, 7)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
 
       piece = Board.piece_at(match.board, :e, 5)
 
@@ -137,21 +137,21 @@ defmodule ChexxTest do
     end
 
     test "can't move a white pawn up two squares if a piece is in the way" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :white, :e, 2)
         ~>> Board.put_piece(:pawn, :black, :e, 3)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e4")
+        ~>> Chexx.ply("e4")
     end
 
     test "can't move a black pawn down two squares if a piece is in the way" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :black, :e, 7)
         ~>> Board.put_piece(:pawn, :white, :e, 6)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
     end
 
     test "can move a piece when two pieces can share a destination, as black" do
@@ -160,7 +160,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :black, :e, 6)
         ~>> Board.put_piece(:pawn, :white, :e, 4)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
 
       piece = Board.piece_at(match.board, :e, 5)
 
@@ -174,7 +174,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :black, :e, 6)
         ~>> Board.put_piece(:pawn, :white, :e, 4)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
 
       piece = Board.piece_at(match.board, :e, 5)
 
@@ -183,35 +183,35 @@ defmodule ChexxTest do
     end
 
     test "can't move the other player's pieces" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :white, :e, 3)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("e4")
+        ~>> Chexx.ply("e4")
     end
 
     test "can't jump the other player's pieces" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :white, :e, 3)
         ~>> Board.put_piece(:pawn, :black, :e, 4)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
     end
 
     test "can't move other pieces via pawn notation" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:bishop, :white, :e, 3)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e4")
+        ~>> Chexx.ply("e4")
     end
 
     test "can't move if there are no pieces that can be moved" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("e5")
+        ~>> Chexx.ply("e5")
     end
 
     test "pawn capture" do
@@ -220,7 +220,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :black, :f, 5)
         ~>> Board.put_piece(:pawn, :white, :e, 4)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("fxe4")
+        ~>> Chexx.ply("fxe4")
 
       piece = Board.piece_at(match.board, :e, 4)
 
@@ -229,11 +229,11 @@ defmodule ChexxTest do
     end
 
     test "capture is required in a pawn capture" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:pawn, :white, :e, 3)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("exd4")
+        ~>> Chexx.ply("exd4")
     end
 
     test "white en passant capture" do
@@ -242,7 +242,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :black, :e, 7)
         ~>> Board.put_piece(:pawn, :white, :f, 5)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.turn("e5", "fxe6")
+        ~>> Chexx.move("e5", "fxe6")
 
       white_pawn = Board.piece_at(match.board, :e, 6)
       assert white_pawn.type == :pawn
@@ -257,7 +257,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :black, :f, 4)
         ~>> Board.put_piece(:pawn, :white, :e, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.turn("e4", "fxe3")
+        ~>> Chexx.move("e4", "fxe3")
 
       white_pawn = Board.piece_at(match.board, :e, 3)
       assert white_pawn.type == :pawn
@@ -273,7 +273,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:pawn, :white, :c, 7)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("c8Q+")
+        ~>> Chexx.ply("c8Q+")
 
       promoted_queen = Board.piece_at(match.board, :c, 8)
 
@@ -292,7 +292,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:king, color, start)
           ~>> Chexx.play_board(color)
-          ~>> Chexx.move("K#{Square.to_algebraic(destination)}")
+          ~>> Chexx.ply("K#{Square.to_algebraic(destination)}")
 
         piece_at_dest = Board.piece_at(match.board, destination)
 
@@ -330,7 +330,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:rook, color, start)
           ~>> Chexx.play_board(color)
-          ~>> Chexx.move("R#{Square.to_algebraic(destination)}")
+          ~>> Chexx.ply("R#{Square.to_algebraic(destination)}")
 
         piece_at_dest = Board.piece_at(match.board, destination)
 
@@ -340,12 +340,12 @@ defmodule ChexxTest do
     end
 
     test "rook can't jump other pieces" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Board.put_piece(:bishop, :white, :h, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Rh3")
+        ~>> Chexx.ply("Rh3")
     end
   end
 
@@ -356,7 +356,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
 
       actual_king = Board.piece_at(match.board, :g, 1)
       assert actual_king.type == :king
@@ -368,77 +368,77 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the king has moved before" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.moves(["Ke1", "Ke7", "0-0"])
+        ~>> Chexx.plies(["Ke1", "Ke7", "0-0"])
     end
 
     test "can't castle if the rook has moved before" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.moves(["Rh1", "Ke7", "0-0"])
+        ~>> Chexx.plies(["Rh1", "Ke7", "0-0"])
     end
 
     test "can't castle if rook isn't there" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if rook isn't a rook" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:bishop, :white, :h, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if king isn't there" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if king isn't a king" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:queen, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if there's a piece in the king's destination" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Board.put_piece(:knight, :white, :g, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if there's a piece in the rook's destination" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :h, 1)
         ~>> Board.put_piece(:bishop, :white, :f, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
   end
 
@@ -449,7 +449,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:rook, :black, :h, 8)
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
 
       actual_king = Board.piece_at(match.board, :g, 8)
       assert actual_king.type == :king
@@ -461,57 +461,57 @@ defmodule ChexxTest do
     end
 
     test "can't castle if rook isn't there" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if rook isn't a rook" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:bishop, :black, :h, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if king isn't there" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:rook, :black, :h, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if king isn't a king" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:queen, :black, :e, 8)
         ~>> Board.put_piece(:rook, :black, :h, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if there's a piece in the king's destination" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:rook, :black, :h, 8)
         ~>> Board.put_piece(:knight, :black, :g, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
 
     test "can't castle if there's a piece in the rook's destination" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:rook, :black, :h, 8)
         ~>> Board.put_piece(:bishop, :black, :f, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0")
+        ~>> Chexx.ply("0-0")
     end
   end
 
@@ -522,7 +522,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :a, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0-0")
+        ~>> Chexx.ply("0-0-0")
 
       actual_king = Board.piece_at(match.board, :c, 1)
       assert actual_king.type == :king
@@ -534,33 +534,33 @@ defmodule ChexxTest do
     end
 
     test "can't castle if the king has moved before" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :a, 1)
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.moves(["Ke1", "Ke7", "0-0-0"])
+        ~>> Chexx.plies(["Ke1", "Ke7", "0-0-0"])
     end
 
     test "can't castle if the rook has moved before" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :a, 1)
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.moves(["Ra1", "Ke7", "0-0-0"])
+        ~>> Chexx.plies(["Ra1", "Ke7", "0-0-0"])
     end
 
     test "can't castle queenside if the intervening square is occupied" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:king, :white, :e, 1)
         ~>> Board.put_piece(:rook, :white, :a, 1)
         ~>> Board.put_piece(:knight, :white, :b, 1)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("0-0-0")
+        ~>> Chexx.ply("0-0-0")
     end
   end
 
@@ -571,7 +571,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:king, :black, :e, 8)
         ~>> Board.put_piece(:rook, :black, :a, 8)
         ~>> Chexx.play_board(:black)
-        ~>> Chexx.move("0-0-0")
+        ~>> Chexx.ply("0-0-0")
 
       actual_king = Board.piece_at(match.board, :c, 8)
       assert actual_king.type == :king
@@ -597,7 +597,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:queen, color, start)
           ~>> Chexx.play_board(color)
-          ~>> Chexx.move("Q#{Square.to_algebraic(destination)}")
+          ~>> Chexx.ply("Q#{Square.to_algebraic(destination)}")
 
         piece_at_dest = Board.piece_at(match.board, destination)
 
@@ -607,12 +607,12 @@ defmodule ChexxTest do
     end
 
     test "can't traverse through pieces" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:queen, :white, :a, 1)
         ~>> Board.put_piece(:pawn, :white, :b, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Qc3")
+        ~>> Chexx.ply("Qc3")
     end
 
     test "can capture" do
@@ -621,7 +621,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:queen, :white, :a, 1)
         ~>> Board.put_piece(:pawn, :black, :b, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Qxb2")
+        ~>> Chexx.ply("Qxb2")
 
       piece_at_dest = Board.piece_at(match.board, :b, 2)
 
@@ -644,7 +644,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:bishop, color, start)
           ~>> Chexx.play_board(color)
-          ~>> Chexx.move("B#{Square.to_algebraic(destination)}")
+          ~>> Chexx.ply("B#{Square.to_algebraic(destination)}")
 
         piece_at_dest = Board.piece_at(match.board, destination)
 
@@ -654,12 +654,12 @@ defmodule ChexxTest do
     end
 
     test "can't traverse through pieces" do
-      {:error, :invalid_move} =
+      {:error, :invalid_ply} =
         {:ok, Board.new()}
         ~>> Board.put_piece(:bishop, :white, :a, 1)
         ~>> Board.put_piece(:pawn, :white, :b, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Bc3")
+        ~>> Chexx.ply("Bc3")
     end
 
     test "can capture" do
@@ -668,7 +668,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:bishop, :white, :a, 1)
         ~>> Board.put_piece(:pawn, :black, :b, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Bxb2")
+        ~>> Chexx.ply("Bxb2")
 
       piece_at_dest = Board.piece_at(match.board, :b, 2)
 
@@ -700,7 +700,7 @@ defmodule ChexxTest do
           {:ok, Board.new()}
           ~>> Board.put_piece(:knight, color, start)
           ~>> Chexx.play_board(color)
-          ~>> Chexx.move("N#{Square.to_algebraic(destination)}")
+          ~>> Chexx.ply("N#{Square.to_algebraic(destination)}")
 
         piece_at_dest = Board.piece_at(match.board, destination)
 
@@ -717,7 +717,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:pawn, :white, :a, 3)
         ~>> Board.put_piece(:pawn, :white, :b, 2)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Nb3")
+        ~>> Chexx.ply("Nb3")
 
       piece_at_dest = Board.piece_at(match.board, :b, 3)
 
@@ -731,7 +731,7 @@ defmodule ChexxTest do
         ~>> Board.put_piece(:knight, :white, :a, 1)
         ~>> Board.put_piece(:pawn, :black, :b, 3)
         ~>> Chexx.play_board(:white)
-        ~>> Chexx.move("Nxb3")
+        ~>> Chexx.ply("Nxb3")
 
       piece_at_dest = Board.piece_at(match.board, :b, 3)
 
@@ -741,24 +741,24 @@ defmodule ChexxTest do
   end
 
   test "can't put your king into check" do
-    {:error, :invalid_move} =
+    {:error, :invalid_ply} =
       {:ok, Board.new()}
       ~>> Board.put_piece(:king, :white, :a, 1)
       ~>> Board.put_piece(:rook, :black, :b, 2)
       ~>> Chexx.play_board(:white)
-      ~>> Chexx.move("Kb1")
+      ~>> Chexx.ply("Kb1")
   end
 
   test "black can't move on the first turn of a game" do
-    {:error, :invalid_move} =
+    {:error, :invalid_ply} =
       Chexx.start_game()
-      |> Chexx.move("c5")
+      |> Chexx.ply("c5")
   end
 
   test "Georg Rotlewi vs Akiba Rubinstein" do
     game = Chexx.start_game()
     {:ok, game} =
-      Chexx.moves(game, [
+      Chexx.plies(game, [
         "d4", "d5",
         "Nf3", "e6",
         "e3", "c5",
@@ -793,7 +793,7 @@ defmodule ChexxTest do
   test "fool's mate" do
     {:ok, game} =
       Chexx.start_game()
-      |> Chexx.moves([
+      |> Chexx.plies([
           "f3", "e5",
           "g4", "Qh4#"
       ])
@@ -808,7 +808,7 @@ defmodule ChexxTest do
       ~>> Board.put_piece(:king, :black, :h, 5)
       ~>> Board.put_piece(:rook, :white, :a, 1)
       ~>> Chexx.play_board(:white)
-      ~>> Chexx.move("Rh1#")
+      ~>> Chexx.ply("Rh1#")
 
     assert game.status == :white_wins
   end
@@ -816,7 +816,7 @@ defmodule ChexxTest do
   test "Game of the Century" do
     game = Chexx.start_game()
     {:ok, game} =
-      Chexx.turns(game, [
+      Chexx.moves(game, [
         "Nf3 Nf6",
         "c4 g6",
         "Nc3 Bg7",
