@@ -20,7 +20,7 @@ defmodule Chexx.Match do
   @type turn() :: String.t()
   @type match_status() :: :in_progress | :white_wins | :black_wins | :draw
   @type t() :: %__MODULE__{
-    history: [String.t()],
+    history: [Chess.Move.t()],
     current_player: Chexx.Color.t(),
     board: Chexx.Board.t(),
     status: match_status()
