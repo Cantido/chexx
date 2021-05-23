@@ -190,10 +190,13 @@ defmodule Chexx.Board do
     captured_square = Map.get(ply, :captures)
     captured_piece = piece_at(board, captured_square)
 
+    capturing_correct_piece? =
+      is_nil(ply.captured_piece_type) or (ply.captured_piece_type == captured_piece.type)
+
     capture_valid? =
       case capture do
-        :required -> not is_nil(captured_piece) and captured_piece.color == Color.opponent(by)
-        :allowed -> is_nil(captured_piece) or captured_piece.color == Color.opponent(by)
+        :required -> not is_nil(captured_piece) and captured_piece.color == Color.opponent(by) and capturing_correct_piece?
+        :allowed -> is_nil(captured_piece) or captured_piece.color == Color.opponent(by) and capturing_correct_piece?
         _ -> is_nil(captured_piece)
       end
 
