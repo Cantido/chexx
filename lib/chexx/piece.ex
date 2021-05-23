@@ -33,8 +33,8 @@ defmodule Chexx.Piece do
     %__MODULE__{type: type, color: color}
   end
 
-  @spec to_unicode(t()) :: String.t()
-  def to_unicode(%__MODULE__{type: type, color: color}) do
+  @spec to_string(t()) :: String.t()
+  def to_string(%__MODULE__{type: type, color: color}) do
     case {color, type} do
       {:white, :king} -> "♔"
       {:white, :queen} -> "♕"
@@ -55,9 +55,10 @@ defmodule Chexx.Piece do
     piece_type == type and piece_color == color
   end
 
+
   defimpl Inspect, for: __MODULE__ do
     def inspect(piece, _opts) do
-      Chexx.Piece.to_unicode(piece)
+      Chexx.Piece.to_string(piece)
     end
   end
 end
