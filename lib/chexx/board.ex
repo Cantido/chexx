@@ -191,7 +191,7 @@ defmodule Chexx.Board do
     captured_piece = piece_at(board, captured_square)
 
     capturing_correct_piece? =
-      is_nil(ply.captured_piece_type) or (ply.captured_piece_type == captured_piece.type)
+      is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == captured_piece.type)
 
     capture_valid? =
       case capture do
