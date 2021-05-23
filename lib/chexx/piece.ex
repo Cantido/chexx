@@ -64,6 +64,13 @@ defmodule Chexx.Piece do
   def moves_from(%__MODULE__{type: :knight, color: color}, square), do: Ply.possible_knight_moves(color, square)
   def moves_from(%__MODULE__{type: :pawn, color: color}, square), do: Ply.possible_pawn_moves(color, square)
 
+  def moves_to(%__MODULE__{type: :king, color: color}, square), do: Ply.possible_king_sources(color, square)
+  def moves_to(%__MODULE__{type: :queen, color: color}, square), do: Ply.possible_queen_sources(color, square)
+  def moves_to(%__MODULE__{type: :rook, color: color}, square), do: Ply.possible_rook_sources(color, square)
+  def moves_to(%__MODULE__{type: :bishop, color: color}, square), do: Ply.possible_bishop_sources(color, square)
+  def moves_to(%__MODULE__{type: :knight, color: color}, square), do: Ply.possible_knight_sources(color, square)
+  def moves_to(%__MODULE__{type: :pawn, color: color}, square), do: Ply.possible_pawn_sources(color, square)
+
   defimpl Inspect, for: __MODULE__ do
     def inspect(piece, _opts) do
       Chexx.Piece.to_string(piece)

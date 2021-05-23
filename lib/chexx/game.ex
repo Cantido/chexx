@@ -185,13 +185,15 @@ defmodule Chexx.Game do
     king_squares = Board.find_pieces(game.board, king)
 
     possible_king_captures =
-      Enum.flat_map(king_squares, fn king_square ->
-        Ply.possible_pawn_sources(opponent, king_square) ++
-        Ply.possible_king_sources(opponent, king_square) ++
-        Ply.possible_queen_sources(opponent, king_square) ++
-        Ply.possible_rook_sources(opponent, king_square) ++
-        Ply.possible_bishop_sources(opponent, king_square) ++
-        Ply.possible_knight_sources(opponent, king_square)
+      game.board.occupied_positions
+      |> Enum.filter(fn %{piece: piece} ->
+        piece.color == opponent
+      end)
+      |> Enum.map(& &1.piece)
+      |> Enum.uniq_by(& &1.type)
+      |> combinations(king_squares)
+      |> Enum.flat_map(fn {piece, king_square} ->
+        Piece.moves_to(piece, king_square)
       end)
       |> Enum.filter(&Board.valid_ply?(game.board, opponent, &1))
       |> Enum.filter(fn possible_ply ->
@@ -205,6 +207,12 @@ defmodule Chexx.Game do
       end)
 
     Enum.count(possible_king_captures) > 0
+  end
+
+  defp combinations(enum1, enum2) do
+    Enum.flat_map(enum1, fn elem1 ->
+      Enum.map(enum2, &{elem1, &1})
+    end)
   end
 
   def checkmate?(game) do
