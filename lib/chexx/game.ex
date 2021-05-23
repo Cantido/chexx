@@ -223,14 +223,7 @@ defmodule Chexx.Game do
         occ_pos.piece.color == player
       end)
       |> Enum.flat_map(fn %{square: square, piece: piece} ->
-        case piece.type do
-          :pawn -> Ply.possible_pawn_moves(player, square)
-          :king -> Ply.possible_king_moves(player, square)
-          :queen -> Ply.possible_queen_moves(player, square)
-          :rook -> Ply.possible_rook_moves(player, square)
-          :bishop -> Ply.possible_bishop_moves(player, square)
-          :knight -> Ply.possible_knight_moves(player, square)
-        end
+        Piece.moves_from(piece, square)
       end)
 
     all_plies =

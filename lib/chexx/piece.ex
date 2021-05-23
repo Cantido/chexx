@@ -3,6 +3,8 @@ defmodule Chexx.Piece do
   A piece type and color.
   """
 
+  alias Chexx.Ply
+
   import Chexx.Color
 
   @type piece() :: :king | :queen | :rook | :bishop | :knight | :pawn
@@ -55,6 +57,12 @@ defmodule Chexx.Piece do
     piece_type == type and piece_color == color
   end
 
+  def moves_from(%__MODULE__{type: :king, color: color}, square), do: Ply.possible_king_moves(color, square)
+  def moves_from(%__MODULE__{type: :queen, color: color}, square), do: Ply.possible_queen_moves(color, square)
+  def moves_from(%__MODULE__{type: :rook, color: color}, square), do: Ply.possible_rook_moves(color, square)
+  def moves_from(%__MODULE__{type: :bishop, color: color}, square), do: Ply.possible_bishop_moves(color, square)
+  def moves_from(%__MODULE__{type: :knight, color: color}, square), do: Ply.possible_knight_moves(color, square)
+  def moves_from(%__MODULE__{type: :pawn, color: color}, square), do: Ply.possible_pawn_moves(color, square)
 
   defimpl Inspect, for: __MODULE__ do
     def inspect(piece, _opts) do
