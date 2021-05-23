@@ -190,7 +190,7 @@ defmodule Chexx.Game do
         piece.color == opponent
       end)
       |> Enum.map(& &1.piece)
-      |> Enum.uniq_by(& &1.type)
+      |> Enum.uniq()
       |> combinations(king_squares)
       |> Enum.flat_map(fn {piece, king_square} ->
         Piece.moves_to(piece, king_square)
