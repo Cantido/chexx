@@ -217,7 +217,7 @@ defmodule Chexx.Game do
 
   defp legal_plies(game) do
     player = game.current_player
-    regular_plies =
+    all_plies =
       game.board.occupied_positions
       |> Enum.filter(fn occ_pos ->
         occ_pos.piece.color == player
@@ -225,12 +225,6 @@ defmodule Chexx.Game do
       |> Enum.flat_map(fn %{square: square, piece: piece} ->
         Piece.moves_from(piece, square)
       end)
-
-    all_plies =
-      Ply.kingside_castle(player) ++
-      Ply.queenside_castle(player) ++
-      regular_plies
-
 
     Enum.filter(all_plies, &legal_ply?(game, &1))
   end

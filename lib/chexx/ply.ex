@@ -432,10 +432,23 @@ defmodule Chexx.Ply do
   end
 
   def possible_king_moves(player, source) do
-    king_movements(source)
-    |> Enum.map(fn destination ->
-      single_touch(Piece.new(:king, player), source, destination)
-    end)
+    normal_moves =
+      king_movements(source)
+      |> Enum.map(fn destination ->
+        single_touch(Piece.new(:king, player), source, destination)
+      end)
+
+    castle_source =
+      case player do
+        :white -> Square.new(5, 1)
+        :black -> Square.new(5, 8)
+      end
+
+    if Square.equals?(source, castle_source) do
+      normal_moves ++ kingside_castle(player) ++ queenside_castle(player)
+    else
+      normal_moves
+    end
   end
 
   def possible_king_sources(player, destination) do
