@@ -221,10 +221,6 @@ defmodule Chexx.Ply do
     })]
   end
 
-  def piece_equals?(piece, color, type) do
-    not is_nil(piece) and piece.color == color and piece.type == type
-  end
-
   def possible_pawn_moves(player, source) do
     piece = Piece.new(:pawn, player)
     advance_direction =
