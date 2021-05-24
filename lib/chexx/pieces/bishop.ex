@@ -1,4 +1,30 @@
 defmodule Chexx.Pieces.Bishop do
+  alias Chexx.Square
+  alias Chexx.Ply
+
   @enforce_keys [:color]
   defstruct [:color]
+
+  def possible_bishop_moves(piece, source) do
+    bishop_movements(source)
+    |> Enum.map(fn destination ->
+      Ply.single_touch(piece, source, destination)
+    end)
+  end
+
+  def possible_bishop_sources(piece, destination) do
+    bishop_movements(destination)
+    |> Enum.map(fn source ->
+      Ply.single_touch(piece, source, destination)
+    end)
+  end
+
+  defp bishop_movements(around) do
+    for distance <- 1..7, direction <- [:up_right, :down_right, :down_left, :up_left] do
+      Square.move_direction(around, direction, distance)
+    end
+    |> Enum.filter(fn square ->
+      Square.within?(square, 1..8, 1..8)
+    end)
+  end
 end

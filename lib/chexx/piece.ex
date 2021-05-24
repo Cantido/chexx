@@ -3,7 +3,6 @@ defmodule Chexx.Piece do
   A piece type and color.
   """
 
-  alias Chexx.Ply
   alias Chexx.Pieces.{
     King,
     Queen,
@@ -35,19 +34,19 @@ defmodule Chexx.Piece do
   def to_string(%Knight{color: :black}), do: "♞"
   def to_string(%Pawn{color: :black}), do: "♟︎"
 
-  def moves_from(%King{color: color}, square), do: Ply.possible_king_moves(color, square)
-  def moves_from(%Queen{color: color}, square), do: Ply.possible_queen_moves(color, square)
-  def moves_from(%Rook{color: color}, square), do: Ply.possible_rook_moves(color, square)
-  def moves_from(%Bishop{color: color}, square), do: Ply.possible_bishop_moves(color, square)
-  def moves_from(%Knight{color: color}, square), do: Ply.possible_knight_moves(color, square)
-  def moves_from(%Pawn{color: color}, square), do: Ply.possible_pawn_moves(color, square)
-  
-  def moves_to(%King{color: color}, square), do: Ply.possible_king_sources(color, square)
-  def moves_to(%Queen{color: color}, square), do: Ply.possible_queen_sources(color, square)
-  def moves_to(%Rook{color: color}, square), do: Ply.possible_rook_sources(color, square)
-  def moves_to(%Bishop{color: color}, square), do: Ply.possible_bishop_sources(color, square)
-  def moves_to(%Knight{color: color}, square), do: Ply.possible_knight_sources(color, square)
-  def moves_to(%Pawn{color: color}, square), do: Ply.possible_pawn_sources(color, square)
+  def moves_from(%King{} = piece, square), do: King.possible_king_moves(piece, square)
+  def moves_from(%Queen{} = piece, square), do: Queen.possible_queen_moves(piece, square)
+  def moves_from(%Rook{} = piece, square), do: Rook.possible_rook_moves(piece, square)
+  def moves_from(%Bishop{} = piece, square), do: Bishop.possible_bishop_moves(piece, square)
+  def moves_from(%Knight{} = piece, square), do: Knight.possible_knight_moves(piece, square)
+  def moves_from(%Pawn{} = piece, square), do: Pawn.possible_pawn_moves(piece, square)
+
+  def moves_to(%King{} = piece, square), do: King.possible_king_sources(piece, square)
+  def moves_to(%Queen{} = piece, square), do: Queen.possible_queen_sources(piece, square)
+  def moves_to(%Rook{} = piece, square), do: Rook.possible_rook_sources(piece, square)
+  def moves_to(%Bishop{} = piece, square), do: Bishop.possible_bishop_sources(piece, square)
+  def moves_to(%Knight{} = piece, square), do: Knight.possible_knight_sources(piece, square)
+  def moves_to(%Pawn{} = piece, square), do: Pawn.possible_pawn_sources(piece, square)
 
   def type(%King{}), do: :king
   def type(%Queen{}), do: :queen
