@@ -1,5 +1,5 @@
 defmodule Chexx.GameTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Chexx.Board
   alias Chexx.Game
   alias Chexx.Pieces.{
