@@ -225,4 +225,13 @@ defmodule Chexx.Pieces.Pawn do
       true -> [move_one]
     end
   end
+
+  defimpl Chexx.Piece do
+    def to_string(%{color: :white}), do: "♙"
+    def to_string(%{color: :black}), do: "♟︎"
+    def moves_from(piece, square), do: Chexx.Pieces.Pawn.possible_pawn_moves(piece, square)
+    def moves_to(piece, square), do: Chexx.Pieces.Pawn.possible_pawn_sources(piece, square)
+    def type(_piece), do: :pawn
+    def color(%{color: color}), do: color
+  end
 end

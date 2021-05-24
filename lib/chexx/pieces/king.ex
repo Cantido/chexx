@@ -162,4 +162,13 @@ defmodule Chexx.Pieces.King do
       match_history_fn: match_history_fn
     })]
   end
+
+  defimpl Chexx.Piece do
+    def to_string(%{color: :white}), do: "♔"
+    def to_string(%{color: :black}), do: "♚"
+    def moves_from(piece, square), do: Chexx.Pieces.King.possible_king_moves(piece, square)
+    def moves_to(piece, square), do: Chexx.Pieces.King.possible_king_sources(piece, square)
+    def type(_piece), do: :king
+    def color(%{color: color}), do: color
+  end
 end

@@ -27,4 +27,13 @@ defmodule Chexx.Pieces.Bishop do
       Square.within?(square, 1..8, 1..8)
     end)
   end
+
+  defimpl Chexx.Piece do
+    def to_string(%{color: :white}), do: "♗"
+    def to_string(%{color: :black}), do: "♝"
+    def moves_from(piece, square), do: Chexx.Pieces.Bishop.possible_bishop_moves(piece, square)
+    def moves_to(piece, square), do: Chexx.Pieces.Bishop.possible_bishop_sources(piece, square)
+    def type(_piece), do: :bishop
+    def color(%{color: color}), do: color
+  end
 end
