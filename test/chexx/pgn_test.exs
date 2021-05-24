@@ -1,5 +1,5 @@
 defmodule Chexx.PGNTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Chexx.PGN
 
   test "decodes a single game" do

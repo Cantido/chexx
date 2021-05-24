@@ -1,5 +1,5 @@
 defmodule ChexxTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use ExUnitProperties
 
   alias Chexx.Square
