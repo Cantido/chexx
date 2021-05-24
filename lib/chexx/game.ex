@@ -2,6 +2,7 @@ defmodule Chexx.Game do
   alias Chexx.Color
   alias Chexx.Board
   alias Chexx.Piece
+  alias Chexx.Pieces.King
   alias Chexx.Ply
   alias Chexx.Promotion
 
@@ -181,7 +182,7 @@ defmodule Chexx.Game do
   defp check?(game) do
     player_in_check = game.current_player
     opponent = Color.opponent(player_in_check)
-    king = Piece.new(:king, player_in_check)
+    king = %King{color: player_in_check}
     king_squares = Board.find_pieces(game.board, king)
 
     possible_king_captures =

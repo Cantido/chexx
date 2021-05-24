@@ -10,6 +10,14 @@ defmodule Chexx.Ply do
   alias Chexx.Touch
   alias Chexx.Square
   alias Chexx.Piece
+  alias Chexx.Pieces.{
+    King,
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+    Pawn
+  }
   alias Chexx.Promotion
 
   @type parsed_notation() :: map()
@@ -105,7 +113,7 @@ defmodule Chexx.Ply do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          move.__struct__ == Touch and Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
+          move.__struct__ == Touch and Enum.any?(move.touches, & &1.piece == %King{color: by})
         end)
 
       rook_moved_before? =
@@ -117,7 +125,7 @@ defmodule Chexx.Ply do
                 :black -> 8
               end
             move.__struct__ == Touch and
-              Piece.equals?(movement.piece, by, :rook) and
+              movement.piece == %Rook{color: by} and
               Square.equals?(movement.source, 8, rook_start_rank)
           end)
         end)
@@ -152,8 +160,8 @@ defmodule Chexx.Ply do
 
     [new(%{
       touches: [
-        Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
-        Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
+        Touch.new(king_start_pos, king_dest_pos, %King{color: by}),
+        Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       match_history_fn: match_history_fn
     })]
@@ -163,7 +171,7 @@ defmodule Chexx.Ply do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          move.__struct__ == Touch and Enum.any?(move.touches, &Piece.equals?(&1.piece, by, :king))
+          move.__struct__ == Touch and Enum.any?(move.touches, & &1 == %King{color: by})
         end)
 
       rook_moved_before? =
@@ -174,7 +182,7 @@ defmodule Chexx.Ply do
                 :white -> 1
                 :black -> 8
               end
-            move.__struct__ == Touch and Piece.equals?(movement.piece, by, :rook) and Square.equals?(movement.source, 1, rook_start_rank)
+            move.__struct__ == Touch and movement.piece == %Rook{color: by} and Square.equals?(movement.source, 1, rook_start_rank)
           end)
         end)
 
@@ -213,8 +221,8 @@ defmodule Chexx.Ply do
 
     [new(%{
       touches: [
-        Touch.new(king_start_pos, king_dest_pos, Piece.new(:king, by)),
-        Touch.new(rook_start_pos, rook_dest_pos, Piece.new(:rook, by)),
+        Touch.new(king_start_pos, king_dest_pos, %King{color: by}),
+        Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       traverses: [traversed_square],
       match_history_fn: match_history_fn
@@ -222,7 +230,7 @@ defmodule Chexx.Ply do
   end
 
   def possible_pawn_moves(player, source) do
-    piece = Piece.new(:pawn, player)
+    piece = %Pawn{color: player}
     advance_direction =
       case player do
         :white -> :up
@@ -299,10 +307,16 @@ defmodule Chexx.Ply do
 
         if can_promote? do
           promotions =
-            Enum.map([:queen, :rook, :bishop, :knight], fn piece_type ->
+            [
+              %Queen{color: Piece.color(touch.piece)},
+              %Rook{color: Piece.color(touch.piece)},
+              %Bishop{color: Piece.color(touch.piece)},
+              %Knight{color: Piece.color(touch.piece)}
+            ]
+            |> Enum.map(fn piece ->
               %Promotion{
                 source: touch.destination,
-                promoted_to: Piece.new(piece_type, touch.piece.color)
+                promoted_to: piece
               }
             end)
 
@@ -367,7 +381,7 @@ defmodule Chexx.Ply do
       sources
       |> Enum.map(fn source ->
         new(%{
-          touches: [Touch.new(source, destination, Piece.new(:pawn, player))],
+          touches: [Touch.new(source, destination, %Pawn{color: player})],
           capture: :required,
           captures: ep_captured_square,
           captured_piece_type: :pawn,
@@ -379,7 +393,7 @@ defmodule Chexx.Ply do
       sources
       |> Enum.map(fn source ->
         new(%{
-          touches: [Touch.new(source, destination, Piece.new(:pawn, player))],
+          touches: [Touch.new(source, destination, %Pawn{color: player})],
           capture: :required,
           captures: destination
         })
@@ -410,7 +424,7 @@ defmodule Chexx.Ply do
       end
 
     move_one =
-      single_touch(Piece.new(:pawn, player), move_one_source, destination, capture: :forbidden)
+      single_touch(%Pawn{color: player}, move_one_source, destination, capture: :forbidden)
 
     move_two_source =
       case player do
@@ -419,7 +433,7 @@ defmodule Chexx.Ply do
       end
 
     move_two =
-      single_touch(Piece.new(:pawn, player), move_two_source, destination, capture: :forbidden)
+      single_touch(%Pawn{color: player}, move_two_source, destination, capture: :forbidden)
 
     cond do
       can_move_two? -> [move_one, move_two]
@@ -431,7 +445,7 @@ defmodule Chexx.Ply do
     normal_moves =
       king_movements(source)
       |> Enum.map(fn destination ->
-        single_touch(Piece.new(:king, player), source, destination)
+        single_touch(%King{color: player}, source, destination)
       end)
 
     castle_source =
@@ -450,7 +464,7 @@ defmodule Chexx.Ply do
   def possible_king_sources(player, destination) do
     king_movements(destination)
     |> Enum.map(fn source ->
-      single_touch(Piece.new(:king, player), source, destination)
+      single_touch(%King{color: player}, source, destination)
     end)
   end
 
@@ -466,14 +480,14 @@ defmodule Chexx.Ply do
   def possible_queen_moves(player, source) do
     queen_movements(source)
     |> Enum.map(fn destination ->
-      single_touch(Piece.new(:queen, player), source, destination)
+      single_touch(%Queen{color: player}, source, destination)
     end)
   end
 
   def possible_queen_sources(player, destination) do
     queen_movements(destination)
     |> Enum.map(fn source ->
-      single_touch(Piece.new(:queen, player), source, destination)
+      single_touch(%Queen{color: player}, source, destination)
     end)
   end
 
@@ -489,14 +503,14 @@ defmodule Chexx.Ply do
   def possible_rook_moves(player, source) do
     rook_movements(source)
     |> Enum.map(fn destination ->
-      single_touch(Piece.new(:rook, player), source, destination)
+      single_touch(%Rook{color: player}, source, destination)
     end)
   end
 
   def possible_rook_sources(player, destination) do
     rook_movements(destination)
     |> Enum.map(fn source ->
-      single_touch(Piece.new(:rook, player), source, destination)
+      single_touch(%Rook{color: player}, source, destination)
     end)
   end
 
@@ -512,14 +526,14 @@ defmodule Chexx.Ply do
   def possible_bishop_moves(player, source) do
     bishop_movements(source)
     |> Enum.map(fn destination ->
-      single_touch(Piece.new(:bishop, player), source, destination)
+      single_touch(%Bishop{color: player}, source, destination)
     end)
   end
 
   def possible_bishop_sources(player, destination) do
     bishop_movements(destination)
     |> Enum.map(fn source ->
-      single_touch(Piece.new(:bishop, player), source, destination)
+      single_touch(%Bishop{color: player}, source, destination)
     end)
   end
 
@@ -535,14 +549,14 @@ defmodule Chexx.Ply do
   def possible_knight_moves(player, source) do
     knight_movements(source)
     |> Enum.map(fn destination ->
-      single_touch(Piece.new(:knight, player), source, destination, traverses: false)
+      single_touch(%Knight{color: player}, source, destination, traverses: false)
     end)
   end
 
   def possible_knight_sources(player, destination) do
     knight_movements(destination)
     |> Enum.map(fn source ->
-      single_touch(Piece.new(:knight, player), source, destination, traverses: false)
+      single_touch(%Knight{color: player}, source, destination, traverses: false)
     end)
   end
 

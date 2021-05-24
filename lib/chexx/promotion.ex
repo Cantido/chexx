@@ -1,6 +1,5 @@
 defmodule Chexx.Promotion do
   alias Chexx.Square
-  alias Chexx.Piece
 
   @type t() :: %__MODULE__{
     source: Chexx.Square.t(),
@@ -17,7 +16,7 @@ defmodule Chexx.Promotion do
   ]
 
   @spec new(Chexx.Square.t(), Chexx.Piece.t()) :: t()
-  def new(%Square{} = source, %Piece{} = promoted_to) do
+  def new(%Square{} = source, promoted_to) do
     %__MODULE__{
       source: source,
       promoted_to: promoted_to

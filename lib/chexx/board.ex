@@ -152,11 +152,6 @@ defmodule Chexx.Board do
     end
   end
 
-  @spec find_pieces(t(), Chexx.Color.t(), Chexx.Piece.piece()) :: [Chexx.Square.t()]
-  def find_pieces(%__MODULE__{} = board, color, type) do
-    find_pieces(board, Piece.new(type, color))
-  end
-
   @spec find_pieces(t(), Chexx.Piece.t()) :: [Chexx.Square.t()]
   def find_pieces(%__MODULE__{} = board, piece) do
     board.occupied_positions
