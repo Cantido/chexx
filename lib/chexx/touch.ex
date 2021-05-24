@@ -5,7 +5,6 @@ defmodule Chexx.Touch do
   """
 
   alias Chexx.Square
-  alias Chexx.Piece
 
   @type t() :: %__MODULE__{
     source: Chexx.Square.t(),
@@ -25,7 +24,7 @@ defmodule Chexx.Touch do
   ]
 
   @spec new(Chexx.Square.t(), Chexx.Square.t(), Chexx.Piece.t()) :: t()
-  def new(%Square{} = source, %Square{} = destination, %Piece{} = piece) do
+  def new(%Square{} = source, %Square{} = destination, piece) do
     %__MODULE__{
       source: source,
       destination: destination,

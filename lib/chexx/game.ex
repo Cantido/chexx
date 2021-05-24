@@ -161,7 +161,7 @@ defmodule Chexx.Game do
         Enum.any?(possible_ply.touches, fn touch ->
           case touch do
             %Promotion{} ->
-              touch.promoted_to.type == parsed_notation[:promoted_to]
+              Piece.type(touch.promoted_to) == parsed_notation[:promoted_to]
             _ -> false
           end
         end)

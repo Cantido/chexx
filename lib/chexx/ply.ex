@@ -288,7 +288,7 @@ defmodule Chexx.Ply do
   defp upgrade_move_to_pawn_promotions(move) do
     if Enum.count(move.touches) == 1 do
       [touch] = move.touches
-      if touch.piece.type == :pawn do
+      if Piece.type(touch.piece) == :pawn do
         can_promote? =
           case {touch.piece.color, touch.destination.rank} do
             {:white, 8} -> true

@@ -7,13 +7,19 @@ defmodule Chexx.Board do
 
   alias Chexx.Square
   alias Chexx.Piece
+  alias Chexx.Pieces.{
+    King,
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+    Pawn
+  }
   alias Chexx.Ply
   alias Chexx.Touch
   alias Chexx.Promotion
   alias Chexx.Color
 
-  import Chexx.Color
-  import Chexx.Piece, only: [is_piece: 1]
   import Chexx.Square, only: [is_rank: 1, is_file: 1]
   import OK, only: [~>>: 2]
 
@@ -39,43 +45,45 @@ defmodule Chexx.Board do
 
   @spec standard() :: t()
   def standard do
+    white_pawn = %Pawn{color: :white}
+    black_pawn = %Pawn{color: :black}
     completed_board =
       {:ok, new()}
-      ~>> put_piece(:pawn, :white, :a, 2)
-      ~>> put_piece(:pawn, :white, :b, 2)
-      ~>> put_piece(:pawn, :white, :c, 2)
-      ~>> put_piece(:pawn, :white, :d, 2)
-      ~>> put_piece(:pawn, :white, :e, 2)
-      ~>> put_piece(:pawn, :white, :f, 2)
-      ~>> put_piece(:pawn, :white, :g, 2)
-      ~>> put_piece(:pawn, :white, :h, 2)
+      ~>> put_piece(white_pawn, :a, 2)
+      ~>> put_piece(white_pawn, :b, 2)
+      ~>> put_piece(white_pawn, :c, 2)
+      ~>> put_piece(white_pawn, :d, 2)
+      ~>> put_piece(white_pawn, :e, 2)
+      ~>> put_piece(white_pawn, :f, 2)
+      ~>> put_piece(white_pawn, :g, 2)
+      ~>> put_piece(white_pawn, :h, 2)
 
-      ~>> put_piece(:rook, :white, :a, 1)
-      ~>> put_piece(:knight, :white, :b, 1)
-      ~>> put_piece(:bishop, :white, :c, 1)
-      ~>> put_piece(:queen, :white, :d, 1)
-      ~>> put_piece(:king, :white, :e, 1)
-      ~>> put_piece(:bishop, :white, :f, 1)
-      ~>> put_piece(:knight, :white, :g, 1)
-      ~>> put_piece(:rook, :white, :h, 1)
+      ~>> put_piece(%Rook{color: :white}, :a, 1)
+      ~>> put_piece(%Knight{color: :white}, :b, 1)
+      ~>> put_piece(%Bishop{color: :white}, :c, 1)
+      ~>> put_piece(%Queen{color: :white}, :d, 1)
+      ~>> put_piece(%King{color: :white}, :e, 1)
+      ~>> put_piece(%Bishop{color: :white}, :f, 1)
+      ~>> put_piece(%Knight{color: :white}, :g, 1)
+      ~>> put_piece(%Rook{color: :white}, :h, 1)
 
-      ~>> put_piece(:pawn, :black, :a, 7)
-      ~>> put_piece(:pawn, :black, :b, 7)
-      ~>> put_piece(:pawn, :black, :c, 7)
-      ~>> put_piece(:pawn, :black, :d, 7)
-      ~>> put_piece(:pawn, :black, :e, 7)
-      ~>> put_piece(:pawn, :black, :f, 7)
-      ~>> put_piece(:pawn, :black, :g, 7)
-      ~>> put_piece(:pawn, :black, :h, 7)
+      ~>> put_piece(black_pawn, :a, 7)
+      ~>> put_piece(black_pawn, :b, 7)
+      ~>> put_piece(black_pawn, :c, 7)
+      ~>> put_piece(black_pawn, :d, 7)
+      ~>> put_piece(black_pawn, :e, 7)
+      ~>> put_piece(black_pawn, :f, 7)
+      ~>> put_piece(black_pawn, :g, 7)
+      ~>> put_piece(black_pawn, :h, 7)
 
-      ~>> put_piece(:rook, :black, :a, 8)
-      ~>> put_piece(:knight, :black, :b, 8)
-      ~>> put_piece(:bishop, :black, :c, 8)
-      ~>> put_piece(:queen, :black, :d, 8)
-      ~>> put_piece(:king, :black, :e, 8)
-      ~>> put_piece(:bishop, :black, :f, 8)
-      ~>> put_piece(:knight, :black, :g, 8)
-      ~>> put_piece(:rook, :black, :h, 8)
+      ~>> put_piece(%Rook{color: :black}, :a, 8)
+      ~>> put_piece(%Knight{color: :black}, :b, 8)
+      ~>> put_piece(%Bishop{color: :black}, :c, 8)
+      ~>> put_piece(%Queen{color: :black}, :d, 8)
+      ~>> put_piece(%King{color: :black}, :e, 8)
+      ~>> put_piece(%Bishop{color: :black}, :f, 8)
+      ~>> put_piece(%Knight{color: :black}, :g, 8)
+      ~>> put_piece(%Rook{color: :black}, :h, 8)
 
     case completed_board do
       {:ok, board} -> board
@@ -83,14 +91,14 @@ defmodule Chexx.Board do
     end
   end
 
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
-  def put_piece(%__MODULE__{} = board, type, color, file, rank) when is_piece(type) and is_color(color) do
-    put_piece(board, type, color, Square.new(file, rank))
+  @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.file(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
+  @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
+  def put_piece(%__MODULE__{} = board, piece, file, rank) do
+    put_piece(board, piece, Square.new(file, rank))
   end
 
-  @spec put_piece(t(), Chexx.Piece.piece(), Chexx.Color.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, move_error()}
-  def put_piece(%__MODULE__{} = board, type, color, %Square{} = square)  when is_piece(type) and is_color(color) do
+  @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, move_error()}
+  def put_piece(%__MODULE__{} = board, piece, %Square{} = square) do
     square = Square.new(square)
     piece_at_square = piece_at(board, square)
 
@@ -98,7 +106,7 @@ defmodule Chexx.Board do
       not is_valid_square(square) -> {:error, :invalid_destination}
       not is_nil(piece_at_square) -> {:error, :square_occupied}
       true ->
-        occupied_positions = [%{piece: Piece.new(type, color), square: square} | board.occupied_positions]
+        occupied_positions = [%{piece: piece, square: square} | board.occupied_positions]
         {:ok, %{board | occupied_positions: occupied_positions}}
     end
   end
@@ -191,7 +199,7 @@ defmodule Chexx.Board do
     captured_piece = piece_at(board, captured_square)
 
     capturing_correct_piece? =
-      is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == captured_piece.type)
+      is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == Piece.type(captured_piece))
 
     capture_valid? =
       case capture do
@@ -223,12 +231,12 @@ defmodule Chexx.Board do
 
     cond do
       is_nil(piece) -> {:error, {:invalid_ply, "No piece at #{inspect touch.source} to move."}}
-      touch.piece.type != piece.type -> {:error, {:invalid_ply, "Expected a #{touch.piece.type} to be at #{inspect touch.source}, but it was a #{piece.type} instead."}}
-      touch.piece.color != piece.color -> {:error, {:invalid_ply, "Expected a #{touch.piece.color} piece at #{inspect touch.source}, but it was a #{piece.color} piece."}}
+      Piece.type(touch.piece) != Piece.type(piece) -> {:error, {:invalid_ply, "Expected a #{Piece.type(touch.piece)} to be at #{inspect touch.source}, but it was a #{Piece.type(piece)} instead."}}
+      Piece.color(touch.piece) != Piece.color(piece) -> {:error, {:invalid_ply, "Expected a #{Piece.color(touch.piece)} piece at #{inspect touch.source}, but it was a #{Piece.color(piece)} piece."}}
       true ->
         board
         |> delete_piece(touch.source)
-        |> put_piece(piece.type, piece.color, touch.destination)
+        |> put_piece(piece, touch.destination)
     end
   end
 
@@ -239,12 +247,12 @@ defmodule Chexx.Board do
 
     cond do
       is_nil(piece) -> {:error, {:invalid_ply, "No piece at #{inspect promotion.source} to promote."}}
-      promoted_to_piece.color != piece.color -> {:error, {:invalid_ply, "Expected a #{promoted_to_piece.color} piece at #{inspect promotion.source}, but it was a #{piece.color} piece."}}
+      Piece.color(promoted_to_piece) != Piece.color(piece) -> {:error, {:invalid_ply, "Expected a #{Piece.color(promoted_to_piece)} piece at #{inspect promotion.source}, but it was a #{Piece.color(piece)} piece."}}
       true ->
         moved_board =
           board
           |> delete_piece(promotion.source)
-          |> put_piece(promoted_to_piece.type, promoted_to_piece.color, promotion.source)
+          |> put_piece(promoted_to_piece, promotion.source)
         moved_board
     end
   end
