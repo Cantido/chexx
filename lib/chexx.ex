@@ -14,7 +14,7 @@ defmodule Chexx do
   then passing it into `play_board/2` along with the current player.
   Here's an example of building a standard board with no queens, with black moving first.
 
-      iex> board = Chexx.Board.standard()
+      iex> board = Chexx.Games.Standard.new_board()
       ...> board = Chexx.Board.delete_piece(board, 1, 4)
       ...> board = Chexx.Board.delete_piece(board, 8, 4)
       ...> {:ok, game} = Chexx.play_board(board, :black)

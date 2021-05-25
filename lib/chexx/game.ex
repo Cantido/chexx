@@ -5,6 +5,7 @@ defmodule Chexx.Game do
   alias Chexx.Pieces.King
   alias Chexx.Ply
   alias Chexx.Promotion
+  alias Chexx.Games.Standard
 
   import Chexx.Color
 
@@ -31,7 +32,7 @@ defmodule Chexx.Game do
 
   @spec new() :: t()
   def new do
-    new_match = new(Board.standard())
+    new_match = new(Standard.new_board())
     case new_match do
       {:ok, match} -> match
       err -> raise "Creating a match from a new board caused an error. This is a bug in Chexx. Error: #{inspect err}"
