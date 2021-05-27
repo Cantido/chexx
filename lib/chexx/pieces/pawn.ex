@@ -131,13 +131,19 @@ defmodule Chexx.Pieces.Pawn do
 
     # Most recent move was to current pos
     required_history_fn = fn history ->
-      last_move_destination =
-        Enum.at(history, 0)
-        |> Map.get(:touches)
-        |> Enum.at(0)
-        |> Map.get(:destination)
 
-      captured_pawn_last_moved_to_this_square? = last_move_destination == ep_captured_square
+      captured_pawn_last_moved_to_this_square? =
+        if Enum.empty?(history) do
+          false
+        else
+          last_move_destination =
+            Enum.at(history, 0)
+            |> Map.get(:touches)
+            |> Enum.at(0)
+            |> Map.get(:destination)
+
+          last_move_destination == ep_captured_square
+        end
 
       # captured pawn's previous move was two squares
       captured_pawn_didnt_move_previously? =

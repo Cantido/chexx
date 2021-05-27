@@ -106,7 +106,7 @@ defmodule Chexx.Game do
 
   def disambiguate_plies(plies, %__MODULE__{} = game, parsed_notation) do
     plies
-    |> Enum.filter(&valid_ply?(game.board, &1))
+    |> Enum.filter(&legal_ply?(game, &1))
 
     |> Enum.filter(fn possible_ply ->
       match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
@@ -198,11 +198,6 @@ defmodule Chexx.Game do
         Piece.moves_to(piece, king_square)
       end)
       |> Enum.filter(&legal_ply?(game, &1))
-      |> Enum.filter(&match_history_allows?(game, &1))
-      |> Enum.filter(fn possible_ply ->
-        is_nil(possible_ply.captured_piece_type) or
-         possible_ply.captured_piece_type == :king
-      end)
 
     Enum.count(possible_king_captures) > 0
   end
@@ -228,6 +223,7 @@ defmodule Chexx.Game do
       |> Enum.filter(fn occ_pos ->
         occ_pos.piece.color == player
       end)
+      |> Enum.uniq()
       |> Enum.flat_map(fn %{square: square, piece: piece} ->
         Piece.moves_from(piece, square)
       end)
@@ -235,33 +231,14 @@ defmodule Chexx.Game do
     Enum.filter(all_plies, &legal_ply?(game, &1))
   end
 
-  defp match_history_allows?(game, ply) do
-    match_history_fn = Map.get(ply, :match_history_fn, fn _ -> true end)
-    match_history_fn.(game.history)
-  end
-
   def legal_ply?(game, ply) do
-    valid_on_board? = valid_ply?(game.board, ply)
-
-    match_history_allows? = match_history_allows?(game, ply)
-
-    ply_puts_player_in_check? =
-      case Board.move(game.board, ply) do
-        {:ok, board} -> check?(%{game | board: board})
-        _ -> false
-      end
-
-    valid_on_board? and match_history_allows? and not ply_puts_player_in_check?
-  end
-
-  def valid_ply?(%Board{} = board, %Ply{} = ply) do
     player_making_move = ply.player
 
     all_touches_present? =
       Enum.all?(ply.touches, fn touch ->
         case touch do
           %Touch{source: src, piece: expected_piece} ->
-            actual_piece = Board.piece_at(board, src)
+            actual_piece = Board.piece_at(game.board, src)
             expected_piece.color == player_making_move and expected_piece == actual_piece
           _ -> true
         end
@@ -269,14 +246,14 @@ defmodule Chexx.Game do
 
     path_clear? =
       Enum.all?(Map.get(ply, :traverses, []), fn traversed_square ->
-        is_nil(Board.piece_at(board, traversed_square))
+        is_nil(Board.piece_at(game.board, traversed_square))
       end)
 
     destination_clear? =
       Enum.all?(ply.touches, fn touch ->
           case touch do
             %Touch{destination: dest} ->
-              landing_piece = Board.piece_at(board, dest)
+              landing_piece = Board.piece_at(game.board, dest)
               is_nil(landing_piece) or ply.captures == dest
             _ -> true
           end
@@ -284,7 +261,7 @@ defmodule Chexx.Game do
 
     capture = Map.get(ply, :capture, :forbidden)
     captured_square = Map.get(ply, :captures)
-    captured_piece = Board.piece_at(board, captured_square)
+    captured_piece = Board.piece_at(game.board, captured_square)
 
     capturing_correct_piece? =
       is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == Piece.type(captured_piece))
@@ -296,6 +273,20 @@ defmodule Chexx.Game do
         _ -> is_nil(captured_piece)
       end
 
-    all_touches_present? and path_clear? and capture_valid? and destination_clear?
+    match_history_fn = Map.get(ply, :match_history_fn, fn _ -> true end)
+    match_history_allows? = match_history_fn.(game.history)
+
+    ply_puts_player_in_check? =
+      case Board.move(game.board, ply) do
+        {:ok, board} -> check?(%{game | board: board})
+        _ -> false
+      end
+
+    all_touches_present? and
+      path_clear? and
+      capture_valid? and
+      destination_clear? and
+      match_history_allows? and
+      not ply_puts_player_in_check?
   end
 end
