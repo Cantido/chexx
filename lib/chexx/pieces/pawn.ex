@@ -165,23 +165,25 @@ defmodule Chexx.Pieces.Pawn do
     en_passant_moves =
       sources
       |> Enum.map(fn source ->
-        Ply.new(%{
+        %Ply{
+          player: player,
           touches: [Touch.new(source, destination, %__MODULE__{color: player})],
           capture: :required,
           captures: ep_captured_square,
           captured_piece_type: :pawn,
           match_history_fn: required_history_fn
-        })
+        }
       end)
 
     regular_moves =
       sources
       |> Enum.map(fn source ->
-        Ply.new(%{
+        %Ply{
+          player: player,
           touches: [Touch.new(source, destination, %__MODULE__{color: player})],
           capture: :required,
           captures: destination
-        })
+        }
       end)
 
     if capturing_pawn_advanced_exactly_three_ranks? do

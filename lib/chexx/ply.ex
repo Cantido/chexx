@@ -30,9 +30,11 @@ defmodule Chexx.Ply do
   }
 
   @enforce_keys [
+    :player,
     :touches
   ]
   defstruct [
+    player: nil,
     touches: nil,
     capture: nil,
     captures: nil,
@@ -40,26 +42,6 @@ defmodule Chexx.Ply do
     traverses: [],
     match_history_fn: &__MODULE__.default_match_history_fn/1
   ]
-
-  @spec new(%{
-    required(:touches) => [Chexx.Touch.t()],
-    optional(:capture) => capture_type(),
-    optional(:captures) => Chexx.Square.t(),
-    optional(:captured_piece_type) => Chexx.Piece.piece(),
-    optional(:traverses) => [Chexx.Square.t()],
-    optional(:match_history_fn) => ([String.t()] -> boolean())
-  }) :: t()
-  def new(map) when is_map(map) do
-    params = Map.take(map, [
-      :touches,
-      :capture,
-      :captures,
-      :captured_piece_type,
-      :traverses,
-      :match_history_fn
-    ])
-    struct(__MODULE__, params)
-  end
 
   @spec default_match_history_fn([String.t()]) :: true
   def default_match_history_fn(_), do: true
@@ -76,6 +58,7 @@ defmodule Chexx.Ply do
     capture = Keyword.get(opts, :capture, :allowed)
 
     %__MODULE__{
+      player: piece.color,
       touches: [Touch.new(source, destination, piece)],
       capture: capture,
       captures: destination,

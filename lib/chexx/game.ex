@@ -5,6 +5,7 @@ defmodule Chexx.Game do
   alias Chexx.Pieces.King
   alias Chexx.Ply
   alias Chexx.Promotion
+  alias Chexx.Touch
   alias Chexx.Games.Standard
 
   import Chexx.Color
@@ -103,9 +104,9 @@ defmodule Chexx.Game do
     %{game | status: status}
   end
 
-  def disambiguate_plies(plies, %__MODULE__{} = game, by, parsed_notation) do
+  def disambiguate_plies(plies, %__MODULE__{} = game, parsed_notation) do
     plies
-    |> Enum.filter(&Board.valid_ply?(game.board, by, &1))
+    |> Enum.filter(&valid_ply?(game.board, &1))
 
     |> Enum.filter(fn possible_ply ->
       match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
@@ -113,7 +114,7 @@ defmodule Chexx.Game do
       match_history_fn.(game.history)
     end)
     |> Enum.filter(fn ply ->
-      opponent = Color.opponent(by)
+      opponent = Color.opponent(ply.player)
 
       expected_check = parsed_notation[:check_status] == :check
       expected_checkmate = parsed_notation[:check_status] == :checkmate
@@ -170,7 +171,7 @@ defmodule Chexx.Game do
     end)
     |> Enum.reject(fn possible_ply ->
       {:ok, board} = Board.move(game.board, possible_ply)
-      check?(%{game | board: board, current_player: by})
+      check?(%{game | board: board, current_player: possible_ply.player})
     end)
   end
 
@@ -196,12 +197,8 @@ defmodule Chexx.Game do
       |> Enum.flat_map(fn {piece, king_square} ->
         Piece.moves_to(piece, king_square)
       end)
-      |> Enum.filter(&Board.valid_ply?(game.board, opponent, &1))
-      |> Enum.filter(fn possible_ply ->
-        match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
-
-        match_history_fn.(game.history)
-      end)
+      |> Enum.filter(&legal_ply?(game, &1))
+      |> Enum.filter(&match_history_allows?(game, &1))
       |> Enum.filter(fn possible_ply ->
         is_nil(possible_ply.captured_piece_type) or
          possible_ply.captured_piece_type == :king
@@ -238,11 +235,15 @@ defmodule Chexx.Game do
     Enum.filter(all_plies, &legal_ply?(game, &1))
   end
 
-  def legal_ply?(game, ply) do
-    valid_on_board? = Board.valid_ply?(game.board, game.current_player, ply)
-
+  defp match_history_allows?(game, ply) do
     match_history_fn = Map.get(ply, :match_history_fn, fn _ -> true end)
-    match_history_allows? = match_history_fn.(game.history)
+    match_history_fn.(game.history)
+  end
+
+  def legal_ply?(game, ply) do
+    valid_on_board? = valid_ply?(game.board, ply)
+
+    match_history_allows? = match_history_allows?(game, ply)
 
     ply_puts_player_in_check? =
       case Board.move(game.board, ply) do
@@ -251,5 +252,50 @@ defmodule Chexx.Game do
       end
 
     valid_on_board? and match_history_allows? and not ply_puts_player_in_check?
+  end
+
+  def valid_ply?(%Board{} = board, %Ply{} = ply) do
+    player_making_move = ply.player
+
+    all_touches_present? =
+      Enum.all?(ply.touches, fn touch ->
+        case touch do
+          %Touch{source: src, piece: expected_piece} ->
+            actual_piece = Board.piece_at(board, src)
+            expected_piece.color == player_making_move and expected_piece == actual_piece
+          _ -> true
+        end
+      end)
+
+    path_clear? =
+      Enum.all?(Map.get(ply, :traverses, []), fn traversed_square ->
+        is_nil(Board.piece_at(board, traversed_square))
+      end)
+
+    destination_clear? =
+      Enum.all?(ply.touches, fn touch ->
+          case touch do
+            %Touch{destination: dest} ->
+              landing_piece = Board.piece_at(board, dest)
+              is_nil(landing_piece) or ply.captures == dest
+            _ -> true
+          end
+      end)
+
+    capture = Map.get(ply, :capture, :forbidden)
+    captured_square = Map.get(ply, :captures)
+    captured_piece = Board.piece_at(board, captured_square)
+
+    capturing_correct_piece? =
+      is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == Piece.type(captured_piece))
+
+    capture_valid? =
+      case capture do
+        :required -> not is_nil(captured_piece) and captured_piece.color == Color.opponent(player_making_move) and capturing_correct_piece?
+        :allowed -> is_nil(captured_piece) or captured_piece.color == Color.opponent(player_making_move) and capturing_correct_piece?
+        _ -> is_nil(captured_piece)
+      end
+
+    all_touches_present? and path_clear? and capture_valid? and destination_clear?
   end
 end

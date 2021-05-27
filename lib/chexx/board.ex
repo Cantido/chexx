@@ -11,7 +11,6 @@ defmodule Chexx.Board do
   alias Chexx.Ply
   alias Chexx.Touch
   alias Chexx.Promotion
-  alias Chexx.Color
 
   import Chexx.Square, only: [is_rank: 1, is_file: 1]
 
@@ -105,49 +104,6 @@ defmodule Chexx.Board do
     |> Enum.map(fn occ_pos ->
       occ_pos.square
     end)
-  end
-
-  def valid_ply?(%__MODULE__{} = board, by, %Ply{} = ply) do
-    all_touches_present? =
-      Enum.all?(ply.touches, fn touch ->
-        case touch do
-          %Touch{source: src, piece: expected_piece} ->
-            actual_piece = piece_at(board, src)
-            expected_piece.color == by and expected_piece == actual_piece
-          _ -> true
-        end
-      end)
-
-    path_clear? =
-      Enum.all?(Map.get(ply, :traverses, []), fn traversed_square ->
-        is_nil(piece_at(board, traversed_square))
-      end)
-
-    destination_clear? =
-      Enum.all?(ply.touches, fn touch ->
-          case touch do
-            %Touch{destination: dest} ->
-              landing_piece = piece_at(board, dest)
-              is_nil(landing_piece) or ply.captures == dest
-            _ -> true
-          end
-      end)
-
-    capture = Map.get(ply, :capture, :forbidden)
-    captured_square = Map.get(ply, :captures)
-    captured_piece = piece_at(board, captured_square)
-
-    capturing_correct_piece? =
-      is_nil(captured_piece) or is_nil(ply.captured_piece_type) or (ply.captured_piece_type == Piece.type(captured_piece))
-
-    capture_valid? =
-      case capture do
-        :required -> not is_nil(captured_piece) and captured_piece.color == Color.opponent(by) and capturing_correct_piece?
-        :allowed -> is_nil(captured_piece) or captured_piece.color == Color.opponent(by) and capturing_correct_piece?
-        _ -> is_nil(captured_piece)
-      end
-
-    all_touches_present? and path_clear? and capture_valid? and destination_clear?
   end
 
   @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}

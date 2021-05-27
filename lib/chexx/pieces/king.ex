@@ -92,13 +92,14 @@ defmodule Chexx.Pieces.King do
         :black -> Square.new(:f, 8)
       end
 
-    [Ply.new(%{
+    [%Ply{
+      player: by,
       touches: [
         Touch.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
         Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       match_history_fn: match_history_fn
-    })]
+    }]
   end
 
   def queenside_castle(by) do
@@ -153,14 +154,15 @@ defmodule Chexx.Pieces.King do
         :black -> Square.new(:b, 8)
       end
 
-    [Ply.new(%{
+    [%Ply{
+      player: by,
       touches: [
         Touch.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
         Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       traverses: [traversed_square],
       match_history_fn: match_history_fn
-    })]
+    }]
   end
 
   defimpl Chexx.Piece do
