@@ -9,14 +9,6 @@ defmodule Chexx.Ply do
 
   alias Chexx.Touch
   alias Chexx.Square
-  alias Chexx.Pieces.{
-    King,
-    Queen,
-    Rook,
-    Bishop,
-    Knight,
-    Pawn
-  }
 
   @type parsed_notation() :: map()
   @type capture_type :: :allowed | :required | :forbidden
@@ -71,22 +63,5 @@ defmodule Chexx.Ply do
     Enum.any?(move.touches, fn movement ->
       movement.__struct__ == Chexx.Promotion
     end)
-  end
-
-  @spec possible_moves(parsed_notation(), Chexx.Color.t()) :: [t()]
-  def possible_moves(notation, player) do
-    case notation.move_type do
-      :kingside_castle -> King.kingside_castle(player)
-      :queenside_castle -> King.queenside_castle(player)
-      :regular ->
-        case notation.piece_type do
-          :pawn -> Pawn.possible_pawn_sources(%Pawn{color: player}, notation.destination)
-          :king -> King.possible_king_sources(%King{color: player}, notation.destination)
-          :queen -> Queen.possible_queen_sources(%Queen{color: player}, notation.destination)
-          :rook -> Rook.possible_rook_sources(%Rook{color: player}, notation.destination)
-          :bishop -> Bishop.possible_bishop_sources(%Bishop{color: player}, notation.destination)
-          :knight -> Knight.possible_knight_sources(%Knight{color: player}, notation.destination)
-        end
-    end
   end
 end

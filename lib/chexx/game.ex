@@ -2,7 +2,14 @@ defmodule Chexx.Game do
   alias Chexx.Color
   alias Chexx.Board
   alias Chexx.Piece
-  alias Chexx.Pieces.King
+  alias Chexx.Pieces.{
+    King,
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+    Pawn
+  }
   alias Chexx.Ply
   alias Chexx.Promotion
   alias Chexx.Touch
@@ -104,15 +111,26 @@ defmodule Chexx.Game do
     %{game | status: status}
   end
 
-  def disambiguate_plies(plies, %__MODULE__{} = game, parsed_notation) do
+  def possible_moves(%__MODULE__{} = game, parsed_notation) do
+    player = game.current_player
+
+    plies =
+      case parsed_notation.move_type do
+        :kingside_castle -> King.kingside_castle(player)
+        :queenside_castle -> King.queenside_castle(player)
+        :regular ->
+          case parsed_notation.piece_type do
+            :pawn -> Pawn.possible_pawn_sources(%Pawn{color: player}, parsed_notation.destination)
+            :king -> King.possible_king_sources(%King{color: player}, parsed_notation.destination)
+            :queen -> Queen.possible_queen_sources(%Queen{color: player}, parsed_notation.destination)
+            :rook -> Rook.possible_rook_sources(%Rook{color: player}, parsed_notation.destination)
+            :bishop -> Bishop.possible_bishop_sources(%Bishop{color: player}, parsed_notation.destination)
+            :knight -> Knight.possible_knight_sources(%Knight{color: player}, parsed_notation.destination)
+          end
+      end
+
     plies
-    |> Enum.filter(&legal_ply?(game, &1))
 
-    |> Enum.filter(fn possible_ply ->
-      match_history_fn = Map.get(possible_ply, :match_history_fn, fn _ -> true end)
-
-      match_history_fn.(game.history)
-    end)
     |> Enum.filter(fn ply ->
       opponent = Color.opponent(ply.player)
 
@@ -169,10 +187,7 @@ defmodule Chexx.Game do
         end)
       end
     end)
-    |> Enum.reject(fn possible_ply ->
-      {:ok, board} = Board.move(game.board, possible_ply)
-      check?(%{game | board: board, current_player: possible_ply.player})
-    end)
+    |> Enum.filter(&legal_ply?(game, &1))
   end
 
   defp xor(true, true), do: false

@@ -64,9 +64,7 @@ defmodule Chexx do
 
   defp parse_ply(game, notation) do
     parsed_notation =  AlgebraicNotation.parse(notation)
-    plies =
-      Ply.possible_moves(parsed_notation, game.current_player)
-      |> Game.disambiguate_plies(game, parsed_notation)
+    plies = Game.possible_moves(game, parsed_notation)
 
     possible_plies_count = Enum.count(plies)
 
