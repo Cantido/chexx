@@ -1,4 +1,5 @@
 defmodule Chexx.Game do
+  alias Chexx.AlgebraicNotation
   alias Chexx.Color
   alias Chexx.Board
   alias Chexx.Piece
@@ -74,9 +75,10 @@ defmodule Chexx.Game do
     {:ok, %{game | status: status}}
   end
 
-  @spec move(t(), Chexx.Ply.t()) :: {:ok, t()} | {:error, any()}
-  def move(%__MODULE__{} = game, %Ply{} = ply) do
-    with {:ok, board} <- Board.move(game.board, ply) do
+  @spec move(t(), String.t()) :: {:ok, t()} | {:error, any()}
+  def move(%__MODULE__{} = game, notation) do
+    with {:ok, ply} <- parse_ply(game, notation),
+         {:ok, board} <- Board.move(game.board, ply) do
       game =
         %{game | board: board}
         |> put_ply(ply)
@@ -111,26 +113,36 @@ defmodule Chexx.Game do
     %{game | status: status}
   end
 
-  def possible_moves(%__MODULE__{} = game, parsed_notation) do
+  defp parse_ply(game, notation) do
+    plies = possible_moves(game, notation)
+
+    possible_plies_count = Enum.count(plies)
+
+    if possible_plies_count == 1 do
+      {:ok, Enum.at(plies, 0)}
+    else
+      {:error, :invalid_ply}
+    end
+  end
+
+  defp possible_moves(%__MODULE__{} = game, notation) do
+    parsed_notation =  AlgebraicNotation.parse(notation)
+
     player = game.current_player
 
-    plies =
-      case parsed_notation.move_type do
-        :kingside_castle -> King.kingside_castle(player)
-        :queenside_castle -> King.queenside_castle(player)
-        :regular ->
-          case parsed_notation.piece_type do
-            :pawn -> Pawn.possible_pawn_sources(%Pawn{color: player}, parsed_notation.destination)
-            :king -> King.possible_king_sources(%King{color: player}, parsed_notation.destination)
-            :queen -> Queen.possible_queen_sources(%Queen{color: player}, parsed_notation.destination)
-            :rook -> Rook.possible_rook_sources(%Rook{color: player}, parsed_notation.destination)
-            :bishop -> Bishop.possible_bishop_sources(%Bishop{color: player}, parsed_notation.destination)
-            :knight -> Knight.possible_knight_sources(%Knight{color: player}, parsed_notation.destination)
-          end
-      end
-
-    plies
-
+    case parsed_notation.move_type do
+      :kingside_castle -> King.kingside_castle(player)
+      :queenside_castle -> King.queenside_castle(player)
+      :regular ->
+        case parsed_notation.piece_type do
+          :pawn -> Pawn.possible_pawn_sources(%Pawn{color: player}, parsed_notation.destination)
+          :king -> King.possible_king_sources(%King{color: player}, parsed_notation.destination)
+          :queen -> Queen.possible_queen_sources(%Queen{color: player}, parsed_notation.destination)
+          :rook -> Rook.possible_rook_sources(%Rook{color: player}, parsed_notation.destination)
+          :bishop -> Bishop.possible_bishop_sources(%Bishop{color: player}, parsed_notation.destination)
+          :knight -> Knight.possible_knight_sources(%Knight{color: player}, parsed_notation.destination)
+        end
+    end
     |> Enum.filter(fn ply ->
       opponent = Color.opponent(ply.player)
 

@@ -22,9 +22,7 @@ defmodule Chexx do
       #Chexx.Game<current_player: :black, status: :in_progress, ...>
   """
 
-  alias Chexx.AlgebraicNotation
   alias Chexx.Game
-  alias Chexx.Ply
 
   @doc """
   Start a new game of chess.
@@ -48,9 +46,8 @@ defmodule Chexx do
   """
   @spec ply(Chexx.Game.t(), String.t()) :: {:ok, Chexx.Game.t()} | {:error, any()}
   def ply(%Game{} = game, notation) do
-    with {:ok, game} <- ensure_game_in_progress(game),
-         {:ok, ply} <- parse_ply(game, notation) do
-      Game.move(game, ply)
+    with {:ok, game} <- ensure_game_in_progress(game) do
+      Game.move(game, notation)
     end
   end
 
@@ -59,19 +56,6 @@ defmodule Chexx do
       {:ok, game}
     else
       {:error, :game_over}
-    end
-  end
-
-  defp parse_ply(game, notation) do
-    parsed_notation =  AlgebraicNotation.parse(notation)
-    plies = Game.possible_moves(game, parsed_notation)
-
-    possible_plies_count = Enum.count(plies)
-
-    if possible_plies_count == 1 do
-      {:ok, Enum.at(plies, 0)}
-    else
-      {:error, :invalid_ply}
     end
   end
 
