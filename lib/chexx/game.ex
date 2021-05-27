@@ -35,7 +35,6 @@ defmodule Chexx.Game do
     new_match = new(Standard.new_board())
     case new_match do
       {:ok, match} -> match
-      err -> raise "Creating a match from a new board caused an error. This is a bug in Chexx. Error: #{inspect err}"
     end
   end
 
