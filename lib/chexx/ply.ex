@@ -70,7 +70,7 @@ defmodule Chexx.Ply do
 
     %__MODULE__{
       player: piece.color,
-      touches: [Travel.new(source, destination, piece)],
+      touches: [%Travel{source: source, destination: destination, piece: piece}],
       capture: capture,
       captures: destination,
       traverses: traverses,

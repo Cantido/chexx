@@ -173,7 +173,7 @@ defmodule Chexx.Pieces.Pawn do
       |> Enum.map(fn source ->
         %Ply{
           player: player,
-          touches: [Travel.new(source, destination, %__MODULE__{color: player})],
+          touches: [%Travel{source: source, destination: destination, piece: %__MODULE__{color: player}}],
           capture: :required,
           captures: ep_captured_square,
           captured_piece_type: :pawn,
@@ -186,7 +186,7 @@ defmodule Chexx.Pieces.Pawn do
       |> Enum.map(fn source ->
         %Ply{
           player: player,
-          touches: [Travel.new(source, destination, %__MODULE__{color: player})],
+          touches: [%Travel{source: source, destination: destination, piece: %__MODULE__{color: player}}],
           capture: :required,
           captures: destination
         }

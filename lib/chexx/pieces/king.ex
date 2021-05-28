@@ -101,8 +101,16 @@ defmodule Chexx.Pieces.King do
     [%Ply{
       player: by,
       touches: [
-        Travel.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
-        Travel.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
+        %Travel{
+          source: king_start_pos,
+          destination: king_dest_pos,
+          piece: %__MODULE__{color: by}
+        },
+        %Travel{
+          source: rook_start_pos,
+          destination: rook_dest_pos,
+          piece: %Rook{color: by}
+        },
       ],
       vulnerabilities: vulnerabilities,
       match_history_fn: match_history_fn
@@ -113,7 +121,7 @@ defmodule Chexx.Pieces.King do
     match_history_fn = fn history ->
       king_moved_before? =
         Enum.any?(history, fn move ->
-          move.__struct__ == Touch and Enum.any?(move.touches, & &1 == %__MODULE__{color: by})
+          move.__struct__ == Travel and Enum.any?(move.touches, & &1 == %__MODULE__{color: by})
         end)
 
       rook_moved_before? =
@@ -124,7 +132,7 @@ defmodule Chexx.Pieces.King do
                 :white -> 1
                 :black -> 8
               end
-            move.__struct__ == Touch and movement.piece == %Rook{color: by} and Square.equals?(movement.source, 1, rook_start_rank)
+            move.__struct__ == Travel and movement.piece == %Rook{color: by} and Square.equals?(movement.source, 1, rook_start_rank)
           end)
         end)
 
@@ -170,8 +178,16 @@ defmodule Chexx.Pieces.King do
     [%Ply{
       player: by,
       touches: [
-        Travel.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
-        Travel.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
+        %Travel{
+          source: king_start_pos,
+          destination: king_dest_pos,
+          piece: %__MODULE__{color: by}
+        },
+        %Travel{
+          source: rook_start_pos,
+          destination: rook_dest_pos,
+          piece: %Rook{color: by}
+        },
       ],
       traverses: [traversed_square],
       vulnerabilities: vulnerabilities,
