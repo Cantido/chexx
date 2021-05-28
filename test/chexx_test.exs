@@ -444,6 +444,16 @@ defmodule ChexxTest do
         ~>> Chexx.play_board(:white)
         ~>> Chexx.ply("0-0")
     end
+
+    test "can't castle out of check" do
+      {:error, :invalid_ply} =
+        {:ok, Board.new()}
+        ~>> Board.put_piece(%King{color: :white}, :e, 1)
+        ~>> Board.put_piece(%Rook{color: :white}, :h, 1)
+        ~>> Board.put_piece(%Rook{color: :black}, :e, 3)
+        ~>> Chexx.play_board(:white)
+        ~>> Chexx.ply("0-0")
+    end
   end
 
   describe "black kingside castle" do
@@ -525,6 +535,16 @@ defmodule ChexxTest do
         ~>> Chexx.play_board(:black)
         ~>> Chexx.ply("0-0")
     end
+
+    test "can't castle out of check" do
+      {:error, :invalid_ply} =
+        {:ok, Board.new()}
+        ~>> Board.put_piece(%King{color: :black}, :e, 8)
+        ~>> Board.put_piece(%Rook{color: :black}, :h, 8)
+        ~>> Board.put_piece(%Rook{color: :white}, :e, 6)
+        ~>> Chexx.play_board(:white)
+        ~>> Chexx.ply("0-0")
+    end
   end
 
   describe "white queenside castle" do
@@ -582,6 +602,16 @@ defmodule ChexxTest do
         ~>> Chexx.play_board(:white)
         ~>> Chexx.ply("0-0-0")
     end
+
+    test "can't castle out of check" do
+      {:error, :invalid_ply} =
+        {:ok, Board.new()}
+        ~>> Board.put_piece(%King{color: :white}, :e, 1)
+        ~>> Board.put_piece(%Rook{color: :white}, :a, 1)
+        ~>> Board.put_piece(%Rook{color: :black}, :e, 3)
+        ~>> Chexx.play_board(:white)
+        ~>> Chexx.ply("0-0-0")
+    end
   end
 
   describe "black queenside castle" do
@@ -606,6 +636,16 @@ defmodule ChexxTest do
         ~>> Board.put_piece(%King{color: :black}, :e, 8)
         ~>> Board.put_piece(%Rook{color: :black}, :a, 8)
         ~>> Board.put_piece(%Rook{color: :white}, :d, 6)
+        ~>> Chexx.play_board(:black)
+        ~>> Chexx.ply("0-0-0")
+    end
+
+    test "can't castle out of check" do
+      {:error, :invalid_ply} =
+        {:ok, Board.new()}
+        ~>> Board.put_piece(%King{color: :black}, :e, 8)
+        ~>> Board.put_piece(%Rook{color: :black}, :a, 8)
+        ~>> Board.put_piece(%Rook{color: :white}, :e, 6)
         ~>> Chexx.play_board(:black)
         ~>> Chexx.ply("0-0-0")
     end

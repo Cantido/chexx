@@ -92,10 +92,10 @@ defmodule Chexx.Pieces.King do
         :black -> Square.new(:f, 8)
       end
 
-    vulnerability =
+    vulnerabilities =
       case by do
-        :white -> Square.new(:f, 1)
-        :black -> Square.new(:f, 8)
+        :white -> [Square.new(:e, 1), Square.new(:f, 1)]
+        :black -> [Square.new(:e, 8), Square.new(:f, 8)]
       end
 
     [%Ply{
@@ -104,7 +104,7 @@ defmodule Chexx.Pieces.King do
         Touch.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
         Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
-      vulnerabilities: [vulnerability],
+      vulnerabilities: vulnerabilities,
       match_history_fn: match_history_fn
     }]
   end
@@ -161,10 +161,10 @@ defmodule Chexx.Pieces.King do
         :black -> Square.new(:b, 8)
       end
 
-    vulnerability =
+      vulnerabilities =
       case by do
-        :white -> Square.new(:d, 1)
-        :black -> Square.new(:d, 8)
+        :white -> [Square.new(:e, 1), Square.new(:d, 1)]
+        :black -> [Square.new(:e, 8), Square.new(:d, 8)]
       end
 
     [%Ply{
@@ -174,7 +174,7 @@ defmodule Chexx.Pieces.King do
         Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       traverses: [traversed_square],
-      vulnerabilities: [vulnerability],
+      vulnerabilities: vulnerabilities,
       match_history_fn: match_history_fn
     }]
   end
