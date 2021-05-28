@@ -31,7 +31,7 @@ defmodule Chexx.Game do
   @type turn() :: String.t()
   @type match_status() :: :in_progress | :white_wins | :black_wins | :draw
   @type t() :: %__MODULE__{
-    history: [Chess.Ply.t()],
+    history: [Chexx.Ply.t()],
     current_player: Chexx.Color.t(),
     board: Chexx.Board.t(),
     status: match_status()
@@ -277,6 +277,7 @@ defmodule Chexx.Game do
     Enum.filter(all_plies, &legal_ply?(game, &1))
   end
 
+  @spec legal_ply?(t(), Chexx.Ply.t()) :: boolean
   def legal_ply?(game, ply) do
     player_making_move = ply.player
 

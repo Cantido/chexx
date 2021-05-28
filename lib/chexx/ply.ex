@@ -33,7 +33,7 @@ defmodule Chexx.Ply do
     touches: [Chexx.Touch.t()],
     capture: capture_type(),
     captures: Chexx.Square.t(),
-    captured_piece_type: Chexx.Piece.piece() | nil,
+    captured_piece_type: atom() | nil,
     traverses: [Chexx.Square.t()],
     vulnerabilities: [Chexx.Square.t()],
     match_history_fn: ([String.t()] -> boolean())
