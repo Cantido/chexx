@@ -160,7 +160,7 @@ defmodule Chexx.Board do
       if is_nil(piece) do
         " "
       else
-        Piece.to_string(piece)
+        Piece.to_symbol(piece)
       end
     end)
     |> Enum.chunk_every(8)

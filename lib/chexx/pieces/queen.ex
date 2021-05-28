@@ -29,8 +29,8 @@ defmodule Chexx.Pieces.Queen do
   end
 
   defimpl Chexx.Piece do
-    def to_string(%{color: :white}), do: "♕"
-    def to_string(%{color: :black}), do: "♛"
+    def to_symbol(%{color: :white}), do: "♕"
+    def to_symbol(%{color: :black}), do: "♛"
     def moves_from(piece, square), do: Chexx.Pieces.Queen.possible_queen_moves(piece, square)
     def moves_to(piece, square), do: Chexx.Pieces.Queen.possible_queen_sources(piece, square)
     def type(_piece), do: :queen
