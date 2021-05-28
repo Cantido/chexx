@@ -21,6 +21,7 @@ defmodule Chexx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:exprof, "~> 0.2.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ok, "~> 2.3"},
       {:stream_data, "~> 0.5", only: :test}
