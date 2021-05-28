@@ -18,6 +18,7 @@ defmodule Chexx.Ply do
     captures: Chexx.Square.t(),
     captured_piece_type: Chexx.Piece.piece() | nil,
     traverses: [Chexx.Square.t()],
+    vulnerabilities: [Chexx.Square.t()],
     match_history_fn: ([String.t()] -> boolean())
   }
 
@@ -32,6 +33,7 @@ defmodule Chexx.Ply do
     captures: nil,
     captured_piece_type: nil,
     traverses: [],
+    vulnerabilities: [],
     match_history_fn: &__MODULE__.default_match_history_fn/1
   ]
 

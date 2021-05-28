@@ -224,9 +224,28 @@ defmodule Chexx.Game do
       |> Enum.flat_map(fn {piece, king_square} ->
         Piece.moves_to(piece, king_square)
       end)
+      |> Enum.filter(fn ply ->
+        ply.capture == :required or ply.capture == :allowed
+      end)
       |> Enum.filter(&legal_ply?(game, &1))
 
     Enum.count(possible_king_captures) > 0
+  end
+
+  defp attacks_on(game, attacked_square) do
+    game.board.occupied_positions
+    |> Enum.filter(fn %{piece: piece} ->
+      piece.color == game.current_player
+    end)
+    |> Enum.map(& &1.piece)
+    |> Enum.uniq()
+    |> Enum.flat_map(fn piece ->
+      Piece.moves_to(piece, attacked_square)
+    end)
+    |> Enum.filter(fn ply ->
+      ply.capture == :required or ply.capture == :allowed
+    end)
+    |> Enum.filter(&legal_ply?(game, &1))
   end
 
   defp combinations(enum1, enum2) do
@@ -286,6 +305,11 @@ defmodule Chexx.Game do
           end
       end)
 
+    attacks_on_vulnerabilities? =
+      Enum.any?(ply.vulnerabilities, fn vuln ->
+        Enum.any?(attacks_on(%{game | current_player: Color.opponent(game.current_player)}, vuln))
+      end)
+
     capture = Map.get(ply, :capture, :forbidden)
     captured_square = Map.get(ply, :captures)
     captured_piece = Board.piece_at(game.board, captured_square)
@@ -314,6 +338,7 @@ defmodule Chexx.Game do
       capture_valid? and
       destination_clear? and
       match_history_allows? and
+      not attacks_on_vulnerabilities? and
       not ply_puts_player_in_check?
   end
 end
