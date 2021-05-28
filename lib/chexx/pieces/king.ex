@@ -1,6 +1,6 @@
 defmodule Chexx.Pieces.King do
   alias Chexx.Square
-  alias Chexx.Touch
+  alias Chexx.Touches.Travel
   alias Chexx.Ply
   alias Chexx.Pieces.Rook
 
@@ -101,8 +101,8 @@ defmodule Chexx.Pieces.King do
     [%Ply{
       player: by,
       touches: [
-        Touch.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
-        Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
+        Travel.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
+        Travel.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       vulnerabilities: vulnerabilities,
       match_history_fn: match_history_fn
@@ -170,8 +170,8 @@ defmodule Chexx.Pieces.King do
     [%Ply{
       player: by,
       touches: [
-        Touch.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
-        Touch.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
+        Travel.new(king_start_pos, king_dest_pos, %__MODULE__{color: by}),
+        Travel.new(rook_start_pos, rook_dest_pos, %Rook{color: by}),
       ],
       traverses: [traversed_square],
       vulnerabilities: vulnerabilities,

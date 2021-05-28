@@ -9,8 +9,8 @@ defmodule Chexx.Board do
   alias Chexx.Piece
 
   alias Chexx.Ply
-  alias Chexx.Touch
-  alias Chexx.Promotion
+  alias Chexx.Touches.Travel
+  alias Chexx.Touches.Promotion
 
   import Chexx.Square, only: [is_rank: 1, is_file: 1]
 
@@ -120,8 +120,8 @@ defmodule Chexx.Board do
     end)
   end
 
-  @spec move_piece(t(), Chexx.Touch.t()) :: {:ok, t()} | {:error, any()}
-  defp move_piece(%__MODULE__{} = board, %Touch{} = touch) do
+  @spec move_piece(t(), Chexx.Touches.Travel.t()) :: {:ok, t()} | {:error, any()}
+  defp move_piece(%__MODULE__{} = board, %Travel{} = touch) do
     piece = piece_at(board, touch.source)
 
     cond do
@@ -135,7 +135,7 @@ defmodule Chexx.Board do
     end
   end
 
-  @spec move_piece(t(), Chexx.Promotion.t()) :: {:ok, t()} | {:error, any()}
+  @spec move_piece(t(), Chexx.Touches.Promotion.t()) :: {:ok, t()} | {:error, any()}
   defp move_piece(%__MODULE__{} = board, %Promotion{} = promotion) do
     piece = piece_at(board, promotion.source)
     promoted_to_piece = promotion.promoted_to

@@ -12,8 +12,8 @@ defmodule Chexx.Game do
     Pawn
   }
   alias Chexx.Ply
-  alias Chexx.Promotion
-  alias Chexx.Touch
+  alias Chexx.Touches.Promotion
+  alias Chexx.Touches.Travel
   alias Chexx.Games.Standard
 
   import Chexx.Color
@@ -284,7 +284,7 @@ defmodule Chexx.Game do
     all_touches_present? =
       Enum.all?(ply.touches, fn touch ->
         case touch do
-          %Touch{source: src, piece: expected_piece} ->
+          %Travel{source: src, piece: expected_piece} ->
             actual_piece = Board.piece_at(game.board, src)
             expected_piece.color == player_making_move and expected_piece == actual_piece
           _ -> true
@@ -299,7 +299,7 @@ defmodule Chexx.Game do
     destination_clear? =
       Enum.all?(ply.touches, fn touch ->
           case touch do
-            %Touch{destination: dest} ->
+            %Travel{destination: dest} ->
               landing_piece = Board.piece_at(game.board, dest)
               is_nil(landing_piece) or ply.captures == dest
             _ -> true

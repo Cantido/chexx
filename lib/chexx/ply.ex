@@ -3,7 +3,7 @@ defmodule Chexx.Ply do
   Encapsulates a change in `Chexx.Piece`'s position on a `Chexx.Board`,
   along with certain requirements of the move.
 
-  A `Ply` is usually built from a single `Chexx.Touch`, but some moves require multiple touches,
+  A `Ply` is usually built from a single `Chexx.Touches.Travel`, but some moves require multiple touches,
   like castling.
 
   The `Ply` struct has the following keys:
@@ -24,13 +24,13 @@ defmodule Chexx.Ply do
       You can use this for castling or *en passant* type moves to make sure a piece hasn't moved yet, or has made a certain move.
   """
 
-  alias Chexx.Touch
+  alias Chexx.Touches.Travel
   alias Chexx.Square
 
   @type parsed_notation() :: map()
   @type capture_type :: :allowed | :required | :forbidden
   @type t() :: %__MODULE__{
-    touches: [Chexx.Touch.t()],
+    touches: [Chexx.Touches.Travel.t()],
     capture: capture_type(),
     captures: Chexx.Square.t(),
     captured_piece_type: atom() | nil,
@@ -70,7 +70,7 @@ defmodule Chexx.Ply do
 
     %__MODULE__{
       player: piece.color,
-      touches: [Touch.new(source, destination, piece)],
+      touches: [Travel.new(source, destination, piece)],
       capture: capture,
       captures: destination,
       traverses: traverses,
@@ -80,7 +80,7 @@ defmodule Chexx.Ply do
   @spec any_promotions?(t()) :: boolean()
   def any_promotions?(move) do
     Enum.any?(move.touches, fn movement ->
-      movement.__struct__ == Chexx.Promotion
+      movement.__struct__ == Chexx.Touches.Promotion
     end)
   end
 end

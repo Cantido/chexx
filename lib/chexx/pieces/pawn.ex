@@ -10,9 +10,9 @@ defmodule Chexx.Pieces.Pawn do
     Knight
   }
   alias Chexx.Ply
-  alias Chexx.Promotion
+  alias Chexx.Touches.Promotion
   alias Chexx.Square
-  alias Chexx.Touch
+  alias Chexx.Touches.Travel
 
   def possible_pawn_moves(%__MODULE__{color: player}, source) do
     piece = %__MODULE__{color: player}
@@ -173,7 +173,7 @@ defmodule Chexx.Pieces.Pawn do
       |> Enum.map(fn source ->
         %Ply{
           player: player,
-          touches: [Touch.new(source, destination, %__MODULE__{color: player})],
+          touches: [Travel.new(source, destination, %__MODULE__{color: player})],
           capture: :required,
           captures: ep_captured_square,
           captured_piece_type: :pawn,
@@ -186,7 +186,7 @@ defmodule Chexx.Pieces.Pawn do
       |> Enum.map(fn source ->
         %Ply{
           player: player,
-          touches: [Touch.new(source, destination, %__MODULE__{color: player})],
+          touches: [Travel.new(source, destination, %__MODULE__{color: player})],
           capture: :required,
           captures: destination
         }

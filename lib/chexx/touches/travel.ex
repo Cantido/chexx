@@ -1,4 +1,4 @@
-defmodule Chexx.Touch do
+defmodule Chexx.Touches.Travel do
   @moduledoc """
   The act of touching and moving a piece.
   Encodes a start square and end square.

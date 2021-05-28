@@ -1,4 +1,4 @@
-defmodule Chexx.Promotion do
+defmodule Chexx.Touches.Promotion do
   alias Chexx.Square
 
   @type t() :: %__MODULE__{
