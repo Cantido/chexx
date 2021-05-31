@@ -1,0 +1,31 @@
+pgndatabase = *pgngame
+pgngame = tags newline moves termination [newline]
+
+tags = 1*(tag [newline])
+tag = begintag taglabel tagseparator tagvalue endtag
+taglabel = 1*VCHAR
+tagvalue = string
+
+begintag = "["
+endtag = "]"
+tagseparator = SP
+
+string = beginstring 1*latin1char endstring
+beginstring = DQUOTE
+endstring = DQUOTE
+
+moves = 1*(element separator)
+
+movenumber = 1*DIGIT dot
+element = movenumber / san / comment
+
+san =  "O-O-O" / "O-O" / 1*(ALPHA / DIGIT / "+" / "#")
+
+comment = "{" 1*latin1char "}"
+
+termination = "1-0" / "0-1" / "1/2-1/2" / "*"
+
+separator = SP / newline
+newline = LF / CRLF
+dot = "."
+latin1char = ALPHA / DIGIT / "/" / SP / "," / "." / "-"
