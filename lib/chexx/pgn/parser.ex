@@ -5,6 +5,7 @@ defmodule Chexx.PGN.Parser do
     transform: %{
       "latin1char" => {:reduce, {List, :to_string, []}},
       "moves" => {:reduce, {Chexx.PGN.Parser, :reduce_moves, []}},
+      "pgngame" => {:reduce, {Map, :new, []}},
       "tags" => [{:map, {Chexx.PGN.Parser, :collapse_tag, []}}, {:reduce, {Map, :new, []}}],
       "taglabel" => {:reduce, {List, :to_string, []}},
       "string" => {:reduce, {Enum, :join, []}},
@@ -16,13 +17,17 @@ defmodule Chexx.PGN.Parser do
       "movenumber",
       "taglabel",
       "tagvalue",
+      "tags",
       "termination",
-      "san"
+      "san",
+      "moves"
     ],
     unbox: [
       "latin1char",
       "string",
-      "element"
+      "element",
+      "pgngame",
+      "pgndatabase"
       ],
     untag: [
       "tag"
@@ -48,7 +53,7 @@ defmodule Chexx.PGN.Parser do
     # Build the move list backwards, then reverse it at the end
     Enum.reduce(elements, [], fn {type, value}, moves ->
       case type do
-        :movenumber -> [%{move_number: value} | moves]
+        :movenumber -> [%{} | moves]
         :san ->
           List.update_at(moves, 0, fn move ->
             if Map.has_key?(move, :white_move) do
@@ -59,5 +64,6 @@ defmodule Chexx.PGN.Parser do
           end)
       end
     end)
+    |> Enum.reverse()
   end
 end
