@@ -12,6 +12,7 @@ defmodule Chexx.Game do
     Pawn
   }
   alias Chexx.Ply
+  alias Chexx.Square
   alias Chexx.Touches.Promotion
   alias Chexx.Touches.Travel
   alias Chexx.Games.Standard
@@ -44,6 +45,27 @@ defmodule Chexx.Game do
     new_match = new(Standard.new_board())
     case new_match do
       {:ok, match} -> match
+    end
+  end
+
+  def new(fen) when is_binary(fen) do
+    with {:ok, parsed, _, _, _, _} <- Chexx.FEN.parse(fen) do
+      ranks = parsed[:fenrecord][:pieces]
+
+      Enum.reverse(ranks)
+      |> Enum.with_index(1)
+      |> Enum.reduce(Board.new(), fn {rank_pieces, rank_number}, board ->
+        Enum.reduce(1..8, board, fn file_number, board ->
+          case Enum.at(rank_pieces, file_number - 1) do
+            nil -> board
+            {:emptyspaces, _} -> board
+            piece ->
+              {:ok, board} = Board.put_piece(board, piece, Square.new(file_number, rank_number))
+              board
+          end
+        end)
+      end)
+      |> new()
     end
   end
 

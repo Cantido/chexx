@@ -1,0 +1,15 @@
+fenrecord = pieces space player space castling space enpassanttarget space halfmoves space fullmoves
+
+pieces = 7(row slash) row
+row = 1*(piece / emptyspaces)
+emptyspaces = DIGIT
+piece = ALPHA
+
+player = "w" / "b"
+castling = (["K"] ["Q"] ["k"] ["q"]) / "-"
+enpassanttarget = (ALPHA DIGIT) / "-"
+halfmoves = 1*DIGIT
+fullmoves = 1*DIGIT
+
+space = SP
+slash = "/"

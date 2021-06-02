@@ -167,10 +167,4 @@ defmodule Chexx.Board do
     |> Enum.intersperse("\n")
     |> Enum.join("")
   end
-
-  defimpl Inspect, for: __MODULE__ do
-    def inspect(board, _opts) do
-      Chexx.Board.to_string(board)
-    end
-  end
 end
