@@ -50,6 +50,12 @@ defmodule Chexx.Game do
 
   def new(fen) when is_binary(fen) do
     with {:ok, parsed, _, _, _, _} <- Chexx.FEN.parse(fen) do
+      current_player =
+        case parsed[:fenrecord][:player] do
+          "w" -> :white
+          "b" -> :black
+        end
+
       ranks = parsed[:fenrecord][:pieces]
 
       Enum.reverse(ranks)
@@ -65,7 +71,7 @@ defmodule Chexx.Game do
           end
         end)
       end)
-      |> new()
+      |> new(current_player)
     end
   end
 

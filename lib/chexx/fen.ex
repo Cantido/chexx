@@ -11,7 +11,8 @@ defmodule Chexx.FEN do
     unwrap: [
       "halfmoves",
       "fullmoves",
-      "emptyspaces"
+      "emptyspaces",
+      "player"
     ],
     unbox: ["piece"],
     untag: ["row"],

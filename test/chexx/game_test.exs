@@ -12,7 +12,7 @@ defmodule Chexx.GameTest do
   }
   doctest Chexx.Game
 
-  test "decodes can load a game from FEN" do
+  test "decodes can load a board from FEN" do
     {:ok, game} = Game.new("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
     assert Board.piece_at(game.board, :a, 8) == %Rook{color: :black}
@@ -50,5 +50,19 @@ defmodule Chexx.GameTest do
     assert Board.piece_at(game.board, :h, 1) == %Rook{color: :white}
 
     assert game.current_player == :white
+  end
+
+  describe "can load current player from FEN" do
+    test "when current player is white" do
+      {:ok, game} = Game.new("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
+      assert game.current_player == :white
+    end
+
+    test "when current player is black" do
+      {:ok, game} = Game.new("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1")
+
+      assert game.current_player == :black
+    end
   end
 end
