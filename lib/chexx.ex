@@ -15,8 +15,8 @@ defmodule Chexx do
   Here's an example of building a standard board with no queens, with black moving first.
 
       iex> board = Chexx.Games.Standard.new_board()
-      ...> board = Chexx.Board.delete_piece(board, 1, 4)
-      ...> board = Chexx.Board.delete_piece(board, 8, 4)
+      ...> board = Chexx.Board.delete_piece(board, ~q[d1])
+      ...> board = Chexx.Board.delete_piece(board, ~q[d8])
       ...> {:ok, game} = Chexx.play_board(board, :black)
       ...> game
       #Chexx.Game<current_player: :black, status: :in_progress, ...>

@@ -34,12 +34,6 @@ defmodule Chexx.Board do
     %__MODULE__{}
   end
 
-  @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.file(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
-  @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.file_letter(), Chexx.Square.rank()) :: {:ok, t()} | {:error, any()}
-  def put_piece(%__MODULE__{} = board, piece, file, rank) do
-    put_piece(board, piece, Square.new(file, rank))
-  end
-
   @spec put_piece(t(), Chexx.Piece.t(), Chexx.Square.t()) :: {:ok, t()} | {:error, move_error()}
   def put_piece(%__MODULE__{} = board, piece, %Square{} = square) do
     square = Square.new(square)
@@ -54,9 +48,6 @@ defmodule Chexx.Board do
     end
   end
 
-  @spec delete_piece(t(), Chexx.Square.file(), Chexx.Square.rank()) :: t()
-  def delete_piece(board, file, rank), do: delete_piece(board, Square.new(file, rank))
-
   @spec delete_piece(t(), Chexx.Square.t()) :: t()
   def delete_piece(board, square)
 
@@ -70,17 +61,10 @@ defmodule Chexx.Board do
     end)
   end
 
-  @spec is_valid_square({Chexx.Square.file(), Chexx.Square.rank()}) :: boolean
   @spec is_valid_square(Chexx.Square.t()) :: boolean
 
-  def is_valid_square({file, rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(%Square{file: file, rank: rank}) when is_file(file) and is_rank(rank), do: true
   def is_valid_square(_), do: false
-
-  @spec piece_at(t(), Chexx.Square.file(), Chexx.Square.rank()) :: Chexx.Piece.t()
-  def piece_at(%__MODULE__{} = board, file, row) do
-    piece_at(board, Square.new(file, row))
-  end
 
   def piece_at(_board, nil), do: nil
 
@@ -154,7 +138,7 @@ defmodule Chexx.Board do
 
   def to_string(board) do
     for rank <- 8..1, file <- 1..8 do
-      Chexx.Board.piece_at(board, file, rank)
+      Chexx.Board.piece_at(board, Square.new(file, rank))
     end
     |> Enum.map(fn piece ->
       if is_nil(piece) do

@@ -14,6 +14,14 @@ defmodule Chexx.Pieces.Pawn do
   alias Chexx.Square
   alias Chexx.Touches.Travel
 
+  def white do
+    %__MODULE__{color: :white}
+  end
+
+  def black do
+    %__MODULE__{color: :black}
+  end
+
   def possible_pawn_moves(%__MODULE__{color: player}, source) do
     piece = %__MODULE__{color: player}
     advance_direction =

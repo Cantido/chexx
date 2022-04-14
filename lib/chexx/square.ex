@@ -22,6 +22,12 @@ defmodule Chexx.Square do
     :rank
   ]
 
+  defmacro sigil_q(term, _modifiers) do
+    quote do
+      unquote(term) |> Chexx.AlgebraicNotation.parse_square()
+    end
+  end
+
   @spec new(t()) :: t()
   def new(%__MODULE__{} = square) do
     square

@@ -5,6 +5,14 @@ defmodule Chexx.Pieces.Knight do
   @enforce_keys [:color]
   defstruct [:color]
 
+  def white do
+    %__MODULE__{color: :white}
+  end
+
+  def black do
+    %__MODULE__{color: :black}
+  end
+
   def possible_knight_moves(%__MODULE__{color: player}, source) do
     knight_movements(source)
     |> Enum.map(fn destination ->

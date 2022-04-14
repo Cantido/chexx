@@ -7,6 +7,14 @@ defmodule Chexx.Pieces.King do
   @enforce_keys [:color]
   defstruct [:color]
 
+  def white do
+    %__MODULE__{color: :white}
+  end
+
+  def black do
+    %__MODULE__{color: :black}
+  end
+
   def possible_king_moves(%__MODULE__{color: player} = piece, source) do
     normal_moves =
       king_movements(source)

@@ -15,6 +15,22 @@ defmodule Chexx.AlgebraicNotation do
     end
   end
 
+  @doc """
+  Parse a string into `Square` coordinates.
+
+  ## Examples
+
+      iex> Chexx.AlgebraicNotation.parse_square("a1")
+      %Chexx.Square{file: 1, rank: 1}
+
+      iex> Chexx.AlgebraicNotation.parse_square("h8")
+      %Chexx.Square{file: 8, rank: 8}
+  """
+  def parse_square(<<file, rank>>)
+    when file in ?a..?h and rank in ?1..?8 do
+      Square.new(String.to_existing_atom(<<file>>), String.to_integer(<<rank>>))
+  end
+
   defp parse_regular_coords(notation) do
     unless String.match?(notation, @notation_regex) do
       raise "Notation #{inspect notation} not recognized"

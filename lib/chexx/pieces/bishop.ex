@@ -5,6 +5,14 @@ defmodule Chexx.Pieces.Bishop do
   @enforce_keys [:color]
   defstruct [:color]
 
+  def white do
+    %__MODULE__{color: :white}
+  end
+
+  def black do
+    %__MODULE__{color: :black}
+  end
+
   def possible_bishop_moves(piece, source) do
     bishop_movements(source)
     |> Enum.map(fn destination ->
