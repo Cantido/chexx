@@ -207,6 +207,22 @@ defmodule Chexx.Square do
     end
   end
 
+  @doc """
+  Get the color of the square, either `:black` or `:white`.
+
+  ## Examples
+
+      iex> Chexx.Square.new(:a, 1) |> Chexx.Square.color()
+      :black
+
+      iex> Chexx.Square.new(:e, 6) |> Chexx.Square.color()
+      :white
+
+  """
+  def color(%__MODULE__{file: file, rank: rank}) when file in [1, 3, 5, 7] and rank in [1, 3, 5, 7], do: :black
+  def color(%__MODULE__{file: file, rank: rank}) when file in [2, 4, 6, 8] and rank in [2, 4, 6, 8], do: :black
+  def color(%__MODULE__{file: _file, rank: _rank}), do: :white
+
   defimpl Inspect, for: __MODULE__ do
     def inspect(square, _opts) do
       "#Square<#{Chexx.Square.to_algebraic(square)}>"
