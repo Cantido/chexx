@@ -1,17 +1,29 @@
 defmodule Chexx.AlgebraicNotation do
 
   alias Chexx.Square
+  alias Chexx.MoveNotation
 
   @notation_regex ~r/^(?<moved_piece>[KQRBNp]?)(?<source_file>[a-h]?)(?<source_rank>[1-8]?)(?<capture_flag>x?)(?<dest_file>[a-h])(?<dest_rank>[1-8])(?<promotion_piece>[QRBN])?(?<check_flag>\+)?(?<checkmate_flag>#)?$/
 
   def parse(notation) do
     case notation do
       # TODO: allow castling to mark the check? flag
-      "0-0" -> %{move_type: :kingside_castle, check?: false, notation_source: "0-0"}
-      "O-O" -> %{move_type: :kingside_castle, check?: false, notation_source: "O-O"}
-      "0-0-0" -> %{move_type: :queenside_castle, check?: false, notation_source: "0-0-0"}
-      "O-O-O" -> %{move_type: :queenside_castle, check?: false, notation_source: "O-O-O"}
+      "0-0" -> %MoveNotation{move_type: :kingside_castle, check_status: :none, notation_source: "0-0"}
+      "O-O" -> %MoveNotation{move_type: :kingside_castle, check_status: :none, notation_source: "O-O"}
+      "0-0-0" -> %MoveNotation{move_type: :queenside_castle, check_status: :none, notation_source: "0-0-0"}
+      "O-O-O" -> %MoveNotation{move_type: :queenside_castle, check_status: :none, notation_source: "O-O-O"}
       notation -> parse_regular_coords(notation)
+    end
+  end
+
+  @doc """
+  Handles the sigil `~a` for algebraic notation.
+
+  It returns a `Chexx.MoveNotation` struct with the move described by the string.
+  """
+  defmacro sigil_a(term, _modifiers) do
+    quote do
+      unquote(term) |> Chexx.AlgebraicNotation.parse()
     end
   end
 
@@ -93,7 +105,7 @@ defmodule Chexx.AlgebraicNotation do
         "" -> nil
       end
 
-    %{
+    %MoveNotation{
       move_type: :regular,
       piece_type: moved_piece,
       source_file: source_file,

@@ -6,7 +6,7 @@ defmodule Chexx do
 
       iex> game = Chexx.start_game()
       #Chexx.Game<current_player: :white, status: :in_progress, ...>
-      iex> {:ok, game} = Chexx.ply(game, "e3")
+      iex> {:ok, game} = Chexx.move(game, ~a[e3])
       ...> game
       #Chexx.Game<current_player: :black, status: :in_progress, ...>
 
@@ -42,10 +42,22 @@ defmodule Chexx do
 
   @doc """
   Make a move as the current player.
-  Provide your move in algebraic notation.
+
+  You can provide either a single `Chexx.MoveNotation`, or a list of them.
   """
-  @spec ply(Chexx.Game.t(), String.t()) :: {:ok, Chexx.Game.t()} | {:error, any()}
-  def ply(%Game{} = game, notation) do
+  @spec move(Chexx.Game.t(), Chexx.MoveNotation.t()) :: {:ok, Chexx.Game.t()} | {:error, any()}
+  @spec move(Chexx.Game.t(), [Chexx.MoveNotation.t()]) :: {:ok, Chexx.Game.t()} | {:error, any()}
+
+  def move(%Game{} = game, plies) when is_list(plies) do
+    Enum.reduce_while(plies, {:ok, game}, fn ply, {:ok, game} ->
+      case move(game, ply) do
+        {:ok, game} -> {:cont, {:ok, game}}
+        err -> {:halt, err}
+      end
+    end)
+  end
+
+  def move(%Game{} = game, notation) do
     with {:ok, game} <- ensure_game_in_progress(game) do
       Game.move(game, notation)
     end
@@ -61,41 +73,13 @@ defmodule Chexx do
 
   @doc """
   Make two plies at once.
-  This works just as if you called `ply/2` twice.
+  This works just as if you called `move/2` twice.
   """
-  @spec move(Chexx.Game.t(), String.t(), String.t()) :: {:ok, Chexx.Game.t()} | {:error, any()}
+  @spec move(Chexx.Game.t(), Chexx.MoveNotation.t(), Chexx.MoveNotation.t()) :: {:ok, Chexx.Game.t()} | {:error, any()}
   def move(%Game{} = game, ply1, ply2) do
-    with {:ok, game} <- ply(game, ply1) do
-      ply(game, ply2)
+    with {:ok, game} <- move(game, ply1) do
+      move(game, ply2)
     end
-  end
-
-  @doc """
-  Make many plies at once.
-  This works just as if you called `ply/2` multiple times.
-  """
-  @spec plies(Chexx.Game.t(), [String.t()]) :: {:ok, Chexx.Game.t()} | {:error, any()}
-  def plies(%Game{} = game, plies) when is_list(plies) do
-    Enum.reduce_while(plies, {:ok, game}, fn ply, {:ok, game} ->
-      case ply(game, ply) do
-        {:ok, game} -> {:cont, {:ok, game}}
-        err -> {:halt, err}
-      end
-    end)
-  end
-
-  @doc """
-  Make many moves at once.
-  A moves is two plies separated by a space.
-  """
-  @spec moves(Chexx.Game.t(), [String.t()]) :: {:ok, Chexx.Game.t()} | {:error, any()}
-  def moves(%Game{} = game, turns) when is_list(turns) do
-    Enum.reduce_while(turns, {:ok, game}, fn turn, {:ok, game} ->
-      case plies(game, String.split(turn)) do
-        {:ok, game} -> {:cont, {:ok, game}}
-        err -> {:halt, err}
-      end
-    end)
   end
 
   @doc """

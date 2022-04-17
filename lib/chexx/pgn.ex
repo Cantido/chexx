@@ -22,9 +22,9 @@ defmodule Chexx.PGN do
 
     game =
       Enum.reduce(data.moves, game, fn move, game ->
-        {:ok, game} = Chexx.ply(game, move.white_move)
+        {:ok, game} = Chexx.move(game, Chexx.AlgebraicNotation.parse(move.white_move))
         if Map.has_key?(move, :black_move) do
-          {:ok, game} = Chexx.ply(game, move.black_move)
+          {:ok, game} = Chexx.move(game, Chexx.AlgebraicNotation.parse(move.black_move))
           game
         else
           game

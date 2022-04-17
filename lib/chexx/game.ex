@@ -153,8 +153,7 @@ defmodule Chexx.Game do
     end
   end
 
-  defp possible_moves(%__MODULE__{} = game, notation) do
-    parsed_notation =  AlgebraicNotation.parse(notation)
+  defp possible_moves(%__MODULE__{} = game, parsed_notation) do
 
     player = game.current_player
 
@@ -174,8 +173,8 @@ defmodule Chexx.Game do
     |> Enum.filter(fn ply ->
       opponent = Color.opponent(ply.player)
 
-      expected_check = parsed_notation[:check_status] == :check
-      expected_checkmate = parsed_notation[:check_status] == :checkmate
+      expected_check = parsed_notation.check_status == :check
+      expected_checkmate = parsed_notation.check_status == :checkmate
 
       results_in_check? =
         case Board.move(game.board, ply) do
@@ -203,7 +202,7 @@ defmodule Chexx.Game do
       end
     end)
     |> Enum.filter(fn possible_ply ->
-      if not is_nil(parsed_notation[:source_file]) do
+      if not is_nil(parsed_notation.source_file) do
         if parsed_notation.move_type == :regular do
           [touch] = possible_ply.touches
           parsed_notation.source_file == touch.source.file
@@ -215,13 +214,13 @@ defmodule Chexx.Game do
       end
     end)
     |> Enum.filter(fn possible_ply ->
-      if is_nil(parsed_notation[:promoted_to]) do
+      if is_nil(parsed_notation.promoted_to) do
         not Ply.any_promotions?(possible_ply)
       else
         Enum.any?(possible_ply.touches, fn touch ->
           case touch do
             %Promotion{} ->
-              Piece.type(touch.promoted_to) == parsed_notation[:promoted_to]
+              Piece.type(touch.promoted_to) == parsed_notation.promoted_to
             _ -> false
           end
         end)
